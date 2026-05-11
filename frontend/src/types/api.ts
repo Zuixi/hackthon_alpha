@@ -1,0 +1,67 @@
+export interface User {
+  id: string
+  zhihu_id: string
+  name: string
+  avatar: string
+}
+
+export interface HotTopic {
+  id: string
+  question_id: string | null
+  title: string
+  url: string
+  excerpt: string
+  hot_score: number
+  answer_count: number
+  follower_count: number
+  detail: string
+  fetched_at: string
+}
+
+export interface HotTopicListResponse {
+  items: HotTopic[]
+  total: number
+}
+
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  created_at: string
+}
+
+export interface ChatSession {
+  id: string
+  title: string
+  hot_topic_id: string | null
+  hot_topic_title: string | null
+  created_at: string
+  updated_at: string
+  message_count: number
+}
+
+export interface ChatSessionDetail {
+  id: string
+  title: string
+  hot_topic_id: string | null
+  hot_topic_title: string | null
+  messages: ChatMessage[]
+  created_at: string
+  updated_at: string
+}
+
+export interface IdeaCard {
+  id: string
+  content: string
+  tags: string[]
+  hot_topic_id: string | null
+  hot_topic_title: string | null
+  chat_session_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CardListResponse {
+  items: IdeaCard[]
+  total: number
+}

@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+psycopg2-binary
+pydantic
+pydantic-settings
+python-jose[cryptography]
+python-multipart
+httpx
+beautifulsoup4
+python-dotenv
+sse-starlette

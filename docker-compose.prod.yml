@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/postgres:16-linuxarm64
+    container_name: zhihu_alpha_db_prod
+    environment:
+      POSTGRES_USER: creator
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: creator_assistant
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U creator"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: zhihu_alpha_backend_prod
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql://creator:password@postgres:5432/creator_assistant
+      CORS_ORIGINS: http://localhost,http://frontend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ""
+    container_name: zhihu_alpha_frontend_prod
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
+volumes:
+  postgres_data_prod:
