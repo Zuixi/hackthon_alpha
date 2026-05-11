@@ -160,19 +160,26 @@ async def send_message(
             logger.warning(f"Zhihu search failed: {e}")
 
     async def event_stream():
-        full_response = []
+        full_response: list[str] = []
         try:
-            async for chunk in minimax_service.chat_stream(
+            async for event in minimax_service.chat_stream_blocks(
                 user_message=req.message,
                 history=history,
                 topic_title=topic_title,
                 search_context=search_context,
             ):
-                full_response.append(chunk)
-                yield f"data: {json.dumps({'content': chunk})}\n\n"
+                event_type = event.get("type")
+
+                if event_type == "text_delta":
+                    chunk = event.get("content", "")
+                    if chunk:
+                        full_response.append(chunk)
+
+                # Forward all normalized stream blocks to frontend.
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         except Exception as e:
             logger.error(f"Streaming error: {e}")
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
 
         content = "".join(full_response)
         if content:

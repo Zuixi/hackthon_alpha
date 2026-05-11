@@ -26,6 +26,7 @@ services:
     environment:
       DATABASE_URL: postgresql://creator:password@postgres:5432/creator_assistant
       CORS_ORIGINS: http://localhost:5173,http://frontend:5173,http://localhost:${BACKEND_PORT:-8000}
+      BYPASS_OAUTH_LOGIN: ${BYPASS_OAUTH_LOGIN:-true}
     depends_on:
       postgres:
         condition: service_healthy
@@ -40,6 +41,7 @@ services:
     environment:
       VITE_API_URL: ""
       VITE_API_PROXY_TARGET: http://backend:8000
+      VITE_BYPASS_OAUTH_LOGIN: ${BYPASS_OAUTH_LOGIN:-true}
     depends_on:
       - backend
     ports:

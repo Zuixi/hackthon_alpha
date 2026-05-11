@@ -48,6 +48,8 @@ cp backend/.env.example .env
 docker compose up --build
 ```
 
+> 如需本地临时跳过 OAuth 登录，可在根目录 `.env` 设置 `BYPASS_OAUTH_LOGIN=true`（`docker-compose.yml` 默认即开启）。
+
 默认访问：
 
 - 前端: http://localhost:5173

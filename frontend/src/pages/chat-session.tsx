@@ -12,6 +12,12 @@ import { api } from '@/lib/api'
 import { useAuth } from '@/hooks/use-auth'
 import type { ChatMessage } from '@/types/api'
 
+type StreamToolUse = {
+  id: string
+  name: string
+  input: string
+}
+
 export function ChatSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const navigate = useNavigate()
@@ -20,6 +26,9 @@ export function ChatSessionPage() {
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
+  const [streamingThinking, setStreamingThinking] = useState('')
+  const [isThinkingExpanded, setIsThinkingExpanded] = useState(false)
+  const [streamingToolUses, setStreamingToolUses] = useState<StreamToolUse[]>([])
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -51,6 +60,9 @@ export function ChatSessionPage() {
     setInput('')
     setIsStreaming(true)
     setStreamingContent('')
+    setStreamingThinking('')
+    setIsThinkingExpanded(false)
+    setStreamingToolUses([])
 
     const userMsg: ChatMessage = {
       id: `temp-${Date.now()}`,
@@ -67,28 +79,104 @@ export function ChatSessionPage() {
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let accumulated = ''
+      let accumulatedThinking = ''
+      let buffer = ''
+      const toolMap = new Map<string, StreamToolUse>()
+
+      const parseEvent = (rawEvent: string) => {
+        const lines = rawEvent.split('\n')
+        const dataLines = lines
+          .filter((line) => line.startsWith('data:'))
+          .map((line) => line.slice(5).trimStart())
+        if (dataLines.length === 0) return
+        const data = dataLines.join('\n')
+        if (data === '[DONE]') return
+
+        try {
+          const parsed = JSON.parse(data)
+          const type = parsed.type as string | undefined
+
+          // Backward compatibility with old backend payload shape.
+          if (!type && parsed.content) {
+            accumulated += parsed.content
+            setStreamingContent(accumulated)
+            return
+          }
+
+          if (type === 'text_delta' && parsed.content) {
+            accumulated += parsed.content
+            setStreamingContent(accumulated)
+            return
+          }
+
+          if (type === 'thinking_delta' && parsed.content) {
+            accumulatedThinking += parsed.content
+            setStreamingThinking(accumulatedThinking)
+            return
+          }
+
+          if (type === 'tool_use_start') {
+            const id = parsed.id || `tool-${Date.now()}`
+            const item: StreamToolUse = { id, name: parsed.name || 'tool', input: '' }
+            toolMap.set(id, item)
+            setStreamingToolUses(Array.from(toolMap.values()))
+            return
+          }
+
+          if (type === 'tool_use_delta' && parsed.id) {
+            const existing = toolMap.get(parsed.id)
+            if (existing && parsed.content) {
+              existing.input += String(parsed.content)
+              toolMap.set(parsed.id, existing)
+              setStreamingToolUses(Array.from(toolMap.values()))
+            }
+            return
+          }
+
+          if (type === 'tool_use') {
+            const id = parsed.id || `tool-${Date.now()}`
+            const existing = toolMap.get(id) || {
+              id,
+              name: parsed.name || 'tool',
+              input: '',
+            }
+            existing.name = parsed.name || existing.name
+            if (parsed.input !== undefined) {
+              existing.input =
+                typeof parsed.input === 'string'
+                  ? parsed.input
+                  : JSON.stringify(parsed.input, null, 2)
+            }
+            toolMap.set(id, existing)
+            setStreamingToolUses(Array.from(toolMap.values()))
+            return
+          }
+
+          if (type === 'error') {
+            toast.error(parsed.message || '流式响应异常')
+          }
+        } catch {
+          // skip malformed chunks
+        }
+      }
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
-        const text = decoder.decode(value, { stream: true })
-        const lines = text.split('\n')
+        buffer += decoder.decode(value, { stream: true })
+        let delimiterIndex = buffer.indexOf('\n\n')
 
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          const data = line.slice(6)
-          if (data === '[DONE]') continue
-          try {
-            const parsed = JSON.parse(data)
-            if (parsed.content) {
-              accumulated += parsed.content
-              setStreamingContent(accumulated)
-            }
-          } catch {
-            // skip malformed chunks
-          }
+        while (delimiterIndex !== -1) {
+          const rawEvent = buffer.slice(0, delimiterIndex)
+          buffer = buffer.slice(delimiterIndex + 2)
+          parseEvent(rawEvent)
+          delimiterIndex = buffer.indexOf('\n\n')
         }
+      }
+
+      if (buffer.trim()) {
+        parseEvent(buffer)
       }
 
       if (accumulated) {
@@ -105,6 +193,8 @@ export function ChatSessionPage() {
     } finally {
       setIsStreaming(false)
       setStreamingContent('')
+      setStreamingThinking('')
+      setStreamingToolUses([])
       queryClient.invalidateQueries({ queryKey: ['chat-session', sessionId] })
       queryClient.invalidateQueries({ queryKey: ['chat-sessions'] })
     }
@@ -180,12 +270,47 @@ export function ChatSessionPage() {
             />
           ))}
 
-          {isStreaming && streamingContent && (
+          {isStreaming && (streamingThinking || streamingToolUses.length > 0 || streamingContent) && (
             <div className="flex gap-3">
               <Avatar className="h-8 w-8 flex-shrink-0">
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">AI</AvatarFallback>
               </Avatar>
               <div className="flex-1 bg-muted rounded-2xl rounded-tl-none px-4 py-3">
+                {!!streamingThinking && (
+                  <div className="mb-3 rounded-md border bg-background/70 px-3 py-2">
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-medium text-muted-foreground">Thinking</p>
+                      <button
+                        type="button"
+                        className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => setIsThinkingExpanded((prev) => !prev)}
+                      >
+                        {isThinkingExpanded ? '收起' : '展开'}
+                      </button>
+                    </div>
+                    {isThinkingExpanded ? (
+                      <p className="text-xs whitespace-pre-wrap text-muted-foreground">{streamingThinking}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">思考过程已折叠，点击“展开”查看。</p>
+                    )}
+                  </div>
+                )}
+                {streamingToolUses.length > 0 && (
+                  <div className="mb-3 space-y-2">
+                    {streamingToolUses.map((tool) => (
+                      <div key={tool.id} className="rounded-md border bg-background/70 px-3 py-2">
+                        <p className="text-[11px] font-medium text-muted-foreground">
+                          Tool: {tool.name}
+                        </p>
+                        {tool.input && (
+                          <pre className="mt-1 text-xs whitespace-pre-wrap break-words text-muted-foreground">
+                            {tool.input}
+                          </pre>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="prose prose-sm max-w-none dark:prose-invert">
                   <ReactMarkdown>{streamingContent}</ReactMarkdown>
                 </div>

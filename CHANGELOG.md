@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OAuth 登录失败问题：`exchange_oauth_token` 改为请求 `https://openapi.zhihu.com/access_token`，并使用 `application/x-www-form-urlencoded` 传参，避免 `/token` 路径 404 与 JSON 体不被识别。
 - OAuth 错误信息增强：当 token / user 接口返回业务错误结构时，后端会抛出明确错误，便于定位 `app_id/app_key/redirect_uri/code` 不匹配问题。
 - OAuth `redirect_uri` 兼容处理：后端新增规范化逻辑（去首尾空格、仅填写域名时自动补 `/auth/callback`），并在授权链接生成时统一 URL 编码，避免因 `http://127.0.0.1 ` 这类配置导致登录失败。
+- 新增“开发免 OAuth”开关：`BYPASS_OAUTH_LOGIN=true` 时，后端鉴权返回本地调试用户，前端直接判定为已登录，便于快速浏览整站页面效果。
+- `backend/app/services/minimax.py` 按 MiniMax Anthropic 兼容文档重写：改用 `https://api.minimaxi.com/anthropic/v1/messages`，消息体升级为 Anthropic `messages/content` 结构，流式解析 `content_block_delta` 的 `text_delta`，更适配 Agent 工作流与 M2 系列模型。
+- 对话流式链路升级：`chat.py` 改为透传 `thinking/text/tool_use` 事件块，前端 `chat-session.tsx` 升级 SSE 解析与渲染，支持在打字机输出正文时同步展示推理过程与工具调用输入。
+- 对话页面的 `thinking` 区块改为默认折叠并支持手动展开/收起，减少长推理内容对正文阅读区域的挤占。
 - `docker compose up -d` 后端容器端口占用问题：后端宿主机映射改为可配置端口（`BACKEND_PORT`），避免与本机已有 `8000` 端口服务冲突导致启动失败。
 - 前端容器启动失败（Vite 要求 Node `20.19+` 且 `rolldown` 原生绑定加载异常）问题：前端镜像升级到 Node 22（`swr` 镜像源）并调整依赖安装为 `npm install --include=optional`，容器可稳定启动。
 

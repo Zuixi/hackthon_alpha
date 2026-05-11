@@ -8,12 +8,14 @@ export function useAuth() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
+  const bypassOAuth = import.meta.env.VITE_BYPASS_OAUTH_LOGIN === 'true'
   const token = localStorage.getItem('token')
+  const shouldFetchUser = bypassOAuth || !!token
 
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ['user'],
     queryFn: () => api.auth.me(),
-    enabled: !!token,
+    enabled: shouldFetchUser,
     retry: false,
     staleTime: 5 * 60 * 1000,
   })
@@ -25,9 +27,9 @@ export function useAuth() {
   }, [queryClient, navigate])
 
   return {
-    user: token ? user : null,
-    isLoading: !!token && isLoading,
-    isAuthenticated: !!token && !!user,
+    user: shouldFetchUser ? user : null,
+    isLoading: shouldFetchUser && isLoading,
+    isAuthenticated: bypassOAuth ? !!user : !!token && !!user,
     logout,
   }
 }

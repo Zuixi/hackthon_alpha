@@ -8,7 +8,7 @@ from app.config import settings
 from app.database import get_db
 from app.models.user import User
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 def create_access_token(user_id: str) -> str:
@@ -40,9 +40,26 @@ def normalize_redirect_uri(redirect_uri: str = "") -> str:
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db),
 ) -> User:
+    if settings.BYPASS_OAUTH_LOGIN:
+        user = db.query(User).filter(User.zhihu_id == "dev-bypass-user").first()
+        if not user:
+            user = User(
+                zhihu_id="dev-bypass-user",
+                name="本地调试用户",
+                avatar="",
+                zhihu_token="",
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        return user
+
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing token")
+
     token = credentials.credentials
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])

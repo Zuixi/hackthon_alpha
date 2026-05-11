@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:8000"
 
+    # Development
+    BYPASS_OAUTH_LOGIN: bool = False
+
     model_config = {"env_file": str(_env_file), "extra": "ignore"}
 
 
