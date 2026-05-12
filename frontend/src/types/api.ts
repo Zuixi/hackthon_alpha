@@ -10,17 +10,37 @@ export interface HotTopic {
   question_id: string | null
   title: string
   url: string
+  thumbnail_url: string
   excerpt: string
   hot_score: number
   answer_count: number
   follower_count: number
   detail: string
+  fetch_batch: string
   fetched_at: string
 }
 
 export interface HotTopicListResponse {
   items: HotTopic[]
   total: number
+}
+
+export interface HotBatchResponse {
+  fetch_batch: string
+  fetched_at: string
+  items: HotTopic[]
+  count: number
+}
+
+export interface HotDayGroup {
+  date: string
+  batches: HotBatchResponse[]
+  topic_count: number
+}
+
+export interface HotHistoryResponse {
+  days: HotDayGroup[]
+  total_days: number
 }
 
 export interface ChatMessage {

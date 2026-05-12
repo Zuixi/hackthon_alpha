@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **热榜定时采集**：后台调度器每 30 分钟自动调用知乎热榜 API 抓取数据并持久化到 PostgreSQL，每次抓取带 `fetch_batch` 批次标识。
+- **热榜历史时间线**：新增 `GET /api/hot/history?days=5` 接口，返回按天分组、按批次聚合的热榜历史数据，最多保留最近 5 天。
+- **热榜数据自动清理**：调度器每轮抓取后自动清理 5 天前的过期热榜数据，控制数据库体积。
+- **热榜历史视图 UI**：前端热点广场新增「最新/历史」切换，历史模式以天为卡片、每日可展开多个抓取批次，支持按批次时间浏览。
 - **Redis 缓存层**：引入 Redis 7 容器，支持热点数据、关注列表、关注动态的分级缓存（热点 1h、关注列表 5min、关注动态 3min），缓存服务自带连接失败优雅降级。
 - **社交圈页面**：新增 `/social` 路由，提供「关注列表」和「关注动态」双 Tab 视图，关注列表支持分页浏览、头像展示和外链跳转，关注动态以时间线卡片形式展示。
 - **知乎关注列表 API**：后端新增 `GET /api/social/followees`，调用知乎 OAuth `GET /user/followees` 获取用户关注列表，结果缓存到 Redis（5 分钟 TTL）。
@@ -39,9 +43,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 对话页面的 `thinking` 区块改为默认折叠并支持手动展开/收起，减少长推理内容对正文阅读区域的挤占。
 - `docker compose up -d` 后端容器端口占用问题：后端宿主机映射改为可配置端口（`BACKEND_PORT`），避免与本机已有 `8000` 端口服务冲突导致启动失败。
 - 前端容器启动失败（Vite 要求 Node `20.19+` 且 `rolldown` 原生绑定加载异常）问题：前端镜像升级到 Node 22（`swr` 镜像源）并调整依赖安装为 `npm install --include=optional`，容器可稳定启动。
+- 热榜调度调用开发者接口 404 问题：`ZHIHU_DEV_BASE_URL` 默认值与示例配置统一修正为 `https://developer.zhihu.com`。
 
 ### Changed
 
+- **知乎热榜 API 鉴权修正**：从 `x-api-key` 改为 `Authorization: Bearer` + `X-Request-Timestamp`，查询参数 `Limit`（大写）对齐官方文档。
+- **热点广场数据源**：从请求驱动拉取改为后台调度器预填充，API 接口直接返回数据库中最新批次数据。
+- **HotTopic 模型**：新增 `fetch_batch`（抓取批次标识）和 `thumbnail_url`（缩略图）字段，新增 Alembic 迁移。
 - **热点广场 UI 增强**：新增排序切换（热度/时间）、Top3 高亮排名、关注者数量展示、统计栏。
 - **热点缓存迁移**：从内存字典缓存迁移到 Redis 缓存（1 小时 TTL），支持多实例部署下缓存共享。
 - **Docker Compose**：新增 Redis 服务（华为 SWR 镜像源）、后端新增 `REDIS_URL` 环境变量和 Redis 健康检查依赖。
@@ -67,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 根目录 `.env` 默认 `ZHIHU_REDIRECT_URI` 同步到 `http://localhost:8001/auth/callback`，与本地默认 `BACKEND_PORT=8001` 对齐。
 - `frontend/Dockerfile` 与 `frontend/Dockerfile.prod` 的 Node 基础镜像由 Node 20 Alpine 调整为 Node 22 Alpine ARM64（`swr` 镜像源），满足 Vite 8 的最低 Node 版本要求并避免跨架构仿真。
 - 前端 Docker 安装依赖命令统一为 `npm install --include=optional`，确保可选原生依赖在容器内可正确安装。
+- 知乎开发者鉴权配置去冗余：后端开发者接口统一只读取 `ZHIHU_ACCESS_SECRET`，彻底移除历史兼容变量，避免双变量配置不一致。
 
 ## [0.1.0] - 2026-05-11
 

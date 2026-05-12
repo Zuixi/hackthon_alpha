@@ -14,6 +14,9 @@ SUMMARIZE global project status/system environment/user preferences/etc BY USING
 - 缓存策略已从内存字典迁移到 Redis，热点 1h TTL、关注列表 5min TTL、关注动态 3min TTL；cache service 设计为连接失败自动降级（不阻塞请求）。
 - Docker Compose 中 Redis 镜像需使用华为 SWR 镜像源（`swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/redis:7-alpine`），避免 Docker Hub 拉取超时。
 - 前端社交圈页面（`/social`）通过 Tab 切换关注列表和关注动态，数据来源为知乎 OAuth API，需要用户已绑定知乎 token。
+- 热榜数据由后台调度器每 30 分钟自动抓取（FastAPI lifespan + asyncio），存入 PostgreSQL 并自动清理 5 天前数据；前端支持"最新/历史"双视图，历史以天为卡片按批次展示。
+- 知乎开发者接口 Bearer 鉴权凭证已统一收敛到 `ZHIHU_ACCESS_SECRET`，仓库内仅保留单一开发者鉴权变量。
+- 知乎开发者接口域名统一使用 `https://developer.zhihu.com`（而非 `https://api.zhihu.com`），否则热榜调度会出现 404。
 
 ## USER PROFILES
 

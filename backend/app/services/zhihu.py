@@ -1,8 +1,9 @@
 """Zhihu API service - wraps official hackathon APIs.
 
 OAuth endpoints use openapi.zhihu.com (per official docs).
-Developer data APIs use developer.zhihu.com / api.zhihu.com.
+Developer data APIs use developer.zhihu.com with Bearer auth.
 """
+import time
 import httpx
 from app.config import settings
 
@@ -16,7 +17,8 @@ class ZhihuService:
     def _dev_headers(self) -> dict:
         return {
             "Content-Type": "application/json",
-            "x-api-key": settings.ZHIHU_DEV_API_KEY,
+            "Authorization": f"Bearer {settings.ZHIHU_DEV_TOKEN}",
+            "X-Request-Timestamp": str(int(time.time())),
         }
 
     def _oauth_headers(self, access_token: str = "") -> dict:
@@ -61,10 +63,13 @@ class ZhihuService:
             return data
 
     # ── Developer Data APIs ──────────────────────────────────────────
-    async def get_hot_list(self, hours: int = 24, limit: int = 50) -> dict:
-        """Fetch Zhihu hot list from developer API."""
+    async def get_hot_list(self, limit: int = 30) -> dict:
+        """Fetch Zhihu hot list from developer API.
+        Uses Bearer auth + X-Request-Timestamp per official docs.
+        Limit max 30.
+        """
         url = f"{self.dev_base}/api/v1/content/hot_list"
-        params = {"hours": hours, "limit": limit}
+        params = {"Limit": min(limit, 30)}
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(url, headers=self._dev_headers(), params=params)
             resp.raise_for_status()

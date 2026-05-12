@@ -43,10 +43,12 @@ export const api = {
   },
 
   hot: {
-    list: (limit = 50) =>
+    list: (limit = 30) =>
       request<import('@/types/api').HotTopicListResponse>(`/api/hot?limit=${limit}`),
     get: (id: string) =>
       request<import('@/types/api').HotTopic>(`/api/hot/${id}`),
+    history: (days = 5) =>
+      request<import('@/types/api').HotHistoryResponse>(`/api/hot/history?days=${days}`),
   },
 
   chat: {

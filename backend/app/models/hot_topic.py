@@ -11,15 +11,18 @@ class HotTopic(Base):
     question_id = Column(String, index=True)
     title = Column(String, nullable=False)
     url = Column(String, default="")
+    thumbnail_url = Column(String, default="")
     excerpt = Column(Text, default="")
     hot_score = Column(Integer, default=0)
     answer_count = Column(Integer, default=0)
     follower_count = Column(Integer, default=0)
     detail = Column(Text, default="")
+    fetch_batch = Column(String, nullable=False, default="")
     fetched_at = Column(DateTime(timezone=True), server_default=func.now())
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (
         Index("idx_hot_topic_fetched", "fetched_at"),
         Index("idx_hot_topic_score", "hot_score"),
+        Index("idx_hot_topic_fetch_batch", "fetch_batch"),
     )

@@ -84,7 +84,7 @@ docker compose -f docker-compose.prod.yml down
 
 - `LLM_API_KEY` - LLM API 密钥
 - `ZHIHU_APP_ID` / `ZHIHU_APP_KEY` - 知乎黑客松项目密钥
-- `ZHIHU_DEV_API_KEY` - 知乎开发者 API 密钥
+- `ZHIHU_ACCESS_SECRET` - 知乎开发者 API Bearer 凭证（热榜/搜索等开发者接口使用）
 - `JWT_SECRET` - JWT 签名密钥
 
 前端 `.env`:

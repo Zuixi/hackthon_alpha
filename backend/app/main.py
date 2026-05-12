@@ -1,3 +1,6 @@
+import asyncio
+import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,8 +8,29 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from app.config import settings
 from app.routers import auth, hot, chat, cards, publish, social
+from app.services.hot_scheduler import hot_list_scheduler_loop
 
-app = FastAPI(title="知乎创作者助手 API", version="1.0.0")
+logger = logging.getLogger(__name__)
+
+_scheduler_task: asyncio.Task | None = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global _scheduler_task
+    _scheduler_task = asyncio.create_task(hot_list_scheduler_loop())
+    logger.info("Hot list scheduler task created")
+    yield
+    if _scheduler_task and not _scheduler_task.done():
+        _scheduler_task.cancel()
+        try:
+            await _scheduler_task
+        except asyncio.CancelledError:
+            pass
+    logger.info("Hot list scheduler stopped")
+
+
+app = FastAPI(title="知乎创作者助手 API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
