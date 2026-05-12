@@ -17,6 +17,8 @@ class HotTopic(Base):
     answer_count = Column(Integer, default=0)
     follower_count = Column(Integer, default=0)
     detail = Column(Text, default="")
+    platform = Column(String, nullable=False, default="zhihu", index=True)
+    source = Column(String, nullable=False, default="zhihu_api")
     fetch_batch = Column(String, nullable=False, default="")
     fetched_at = Column(DateTime(timezone=True), server_default=func.now())
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -25,4 +27,5 @@ class HotTopic(Base):
         Index("idx_hot_topic_fetched", "fetched_at"),
         Index("idx_hot_topic_score", "hot_score"),
         Index("idx_hot_topic_fetch_batch", "fetch_batch"),
+        Index("idx_hot_topic_platform", "platform"),
     )

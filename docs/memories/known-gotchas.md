@@ -14,3 +14,11 @@
 - 知乎热榜 API 响应结构：顶层 `Code/Message/Data`，Data 含 `Total` 和 `Items[]`（`Title/Url/ThumbnailUrl/Summary`），字段名均为 PascalCase。
 - 热榜后台调度器使用 `asyncio.create_task` + FastAPI lifespan 实现，无需额外依赖（如 APScheduler/Celery）。
 - `hot_topics` 表的 `fetch_batch` 字段用于关联同一批次抓取的数据，格式为 ISO 时间字符串（`YYYY-MM-DDTHH:MM:SS`），前端按此字段分组展示。
+- NewsNow API (`newsnow.busiyi.world/api/s`) 需要携带 `Referer: https://newsnow.busiyi.world/` 和浏览器 UA 头，否则返回 403。
+- 热点调度器支持知乎来源策略 `HOT_ZHIHU_SOURCE_MODE`：`newsnow_first`（默认，NewsNow 抓不到知乎才回退原生）、`newsnow_only`（只用 NewsNow）、`native_only`（只用原生）；比赛期间建议避免 `native_only` 以防消耗知乎原生额度。
+- `hot_topics` 表新增 `platform`（平台标识）和 `source`（数据来源：zhihu_api/newsnow）字段，查询时需注意 platform 过滤参数格式为逗号分隔字符串。
+- NewsNow 平台 ID 与本地 platform_key 存在映射关系（如 `bilibili-hot-search` -> `bilibili`），PLATFORM_REGISTRY 中 `id` 为 API ID，`platform_key` 为数据库存储 key。
+- Redis 缓存的 `/api/hot/platforms` 结果在调度器抓取新批次后不会自动失效，需等待 TTL 过期（5 分钟）才能看到新平台数据。
+- 关键词规则文件 (`backend/config/keyword_rules.txt`) 在 Docker 构建时需要显式 COPY 到镜像中，Dockerfile 需包含 `COPY config ./config`。
+- Python `logging.basicConfig` 必须在 main.py 中显式调用，否则自定义 logger 的 INFO 级日志不会输出到容器标准输出。
+- `/api/hot/source-status` 仅基于“最新 `fetch_batch` 中 `platform=zhihu` 的实际入库记录”判断来源；当该批无知乎数据时，结果应为 `unknown`，不能直接从环境变量推断为真实抓取来源。

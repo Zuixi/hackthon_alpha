@@ -14,6 +14,9 @@ class HotTopicResponse(BaseModel):
     answer_count: int
     follower_count: int
     detail: str
+    platform: str = "zhihu"
+    platform_name: str = "知乎"
+    source: str = "zhihu_api"
     fetch_batch: str = ""
     fetched_at: datetime
 
@@ -44,3 +47,37 @@ class HotHistoryResponse(BaseModel):
     """History of hot topics grouped by day."""
     days: list[HotDayGroup]
     total_days: int
+
+
+class PlatformInfo(BaseModel):
+    id: str
+    name: str
+    count: int
+
+class PlatformListResponse(BaseModel):
+    platforms: list[PlatformInfo]
+
+
+class KeywordGroupResponse(BaseModel):
+    group_name: str
+    display_name: str
+    topics: list[HotTopicResponse]
+    count: int
+
+class GroupedHotResponse(BaseModel):
+    groups: list[KeywordGroupResponse]
+    unmatched: list[HotTopicResponse]
+    total: int
+
+
+class SourceCount(BaseModel):
+    source: str
+    count: int
+
+
+class ZhihuSourceStatusResponse(BaseModel):
+    mode: str
+    latest_batch: str
+    detected_source: str
+    total_topics: int
+    sources: list[SourceCount]

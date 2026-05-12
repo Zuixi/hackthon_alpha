@@ -10,6 +10,7 @@ from app.config import settings
 from app.routers import auth, hot, chat, cards, publish, social
 from app.services.hot_scheduler import hot_list_scheduler_loop
 
+logging.basicConfig(level=logging.INFO, format="%(levelname)s [%(name)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 _scheduler_task: asyncio.Task | None = None

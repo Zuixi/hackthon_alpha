@@ -17,6 +17,10 @@ SUMMARIZE global project status/system environment/user preferences/etc BY USING
 - 热榜数据由后台调度器每 30 分钟自动抓取（FastAPI lifespan + asyncio），存入 PostgreSQL 并自动清理 5 天前数据；前端支持"最新/历史"双视图，历史以天为卡片按批次展示。
 - 知乎开发者接口 Bearer 鉴权凭证已统一收敛到 `ZHIHU_ACCESS_SECRET`，仓库内仅保留单一开发者鉴权变量。
 - 知乎开发者接口域名统一使用 `https://developer.zhihu.com`（而非 `https://api.zhihu.com`），否则热榜调度会出现 404。
+- 热点广场已升级为多平台聚合：NewsNow 覆盖知乎/微博/抖音/头条/B站/百度/澎湃/贴吧，调度器每 30 分钟统一抓取并共享 `fetch_batch`；知乎原生 API 保留为可配置回退源（`HOT_ZHIHU_SOURCE_MODE`）。
+- 关键词过滤引擎支持普通词、必须词(+)、排除词(!)、正则(//)、别名(=>)、组名([])、上限(@N) 等语法，规则文件位于 `backend/config/keyword_rules.txt`。
+- 前端热点广场支持四种视图：全部（混合排序）、按平台（分组折叠）、按主题（关键词分组）、历史（按天/批次），并支持平台芯片过滤和标题搜索。
+- 后端新增 `GET /api/hot/source-status` 用于诊断知乎当前来源（按最新批次实际入库 `source` 聚合判定），可快速确认是否已回退到原生 API。
 
 ## USER PROFILES
 

@@ -16,6 +16,9 @@ export interface HotTopic {
   answer_count: number
   follower_count: number
   detail: string
+  platform: string
+  platform_name: string
+  source: string
   fetch_batch: string
   fetched_at: string
 }
@@ -41,6 +44,29 @@ export interface HotDayGroup {
 export interface HotHistoryResponse {
   days: HotDayGroup[]
   total_days: number
+}
+
+export interface PlatformInfo {
+  id: string
+  name: string
+  count: number
+}
+
+export interface PlatformListResponse {
+  platforms: PlatformInfo[]
+}
+
+export interface KeywordGroupResponse {
+  group_name: string
+  display_name: string
+  topics: HotTopic[]
+  count: number
+}
+
+export interface GroupedHotResponse {
+  groups: KeywordGroupResponse[]
+  unmatched: HotTopic[]
+  total: number
 }
 
 export interface ChatMessage {

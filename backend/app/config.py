@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:8000"
 
+    # NewsNow multi-platform aggregation
+    NEWSNOW_API_URL: str = "https://newsnow.busiyi.world/api/s"
+    HOT_ZHIHU_SOURCE_MODE: str = "newsnow_first"
+
     # Development
     BYPASS_OAUTH_LOGIN: bool = False
 

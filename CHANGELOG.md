@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- 热点诊断接口 `GET /api/hot/source-status`：返回知乎当前抓取来源判定（`newsnow`/`zhihu_api`/`mixed`/`unknown`）、最新批次号与来源分布计数，便于快速确认是否触发原生 API 回退。
+- **多平台热点聚合**：热点广场从单一知乎数据源升级为 8 平台聚合（知乎、微博、抖音、今日头条、B站、百度、澎湃新闻、贴吧），知乎使用原生 API，其余平台通过 NewsNow 聚合 API 抓取。
+- **NewsNow 抓取服务**：新增 `newsnow_fetcher.py`，异步 HTTP 客户端支持失败重试、数据清洗（标题校验、URL 追踪参数去除）、平台间请求间隔控制。
+- **关键词过滤引擎**：移植 TrendRadar 的 frequency.py 核心设计，支持普通词、必须词(+)、排除词(!)、正则(/pattern/)、显示别名(=>)、组别名([])、每组上限(@N)、全局过滤([GLOBAL_FILTER]) 等完整语法。
+- **关键词规则配置**：新增 `backend/config/keyword_rules.txt`，预置科技、社会民生、财经、国际、娱乐体育等主题分组规则。
+- **热点 API 扩展**：新增 `GET /api/hot/platforms`（平台列表及数量统计）、`GET /api/hot/grouped`（按关键词分组返回），现有 `GET /api/hot` 支持 `platform` 过滤参数（逗号分隔）。
+- **热点广场 UI 重设计**：支持四种视图模式（全部/按平台/按主题/历史），平台芯片过滤栏（可多选）、标题搜索框、平台品牌色标签（知乎蓝、微博红、抖音黑等）、关键词分组卡片。
 - **热榜定时采集**：后台调度器每 30 分钟自动调用知乎热榜 API 抓取数据并持久化到 PostgreSQL，每次抓取带 `fetch_batch` 批次标识。
 - **热榜历史时间线**：新增 `GET /api/hot/history?days=5` 接口，返回按天分组、按批次聚合的热榜历史数据，最多保留最近 5 天。
 - **热榜数据自动清理**：调度器每轮抓取后自动清理 5 天前的过期热榜数据，控制数据库体积。
@@ -47,6 +54,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- 热榜调度器新增 `HOT_ZHIHU_SOURCE_MODE`（`newsnow_first`/`newsnow_only`/`native_only`）知乎来源策略：默认先走 NewsNow（含知乎源），仅在 NewsNow 未抓到知乎时回退知乎原生 API，降低比赛期间原生接口额度消耗风险。
+- **HotTopic 模型扩展**：新增 `platform`（平台标识）和 `source`（数据来源）字段，新增 Alembic 迁移，现有数据自动回填为 `zhihu` / `zhihu_api`。
+- **热榜调度器升级**：从单一知乎抓取改为多阶段调度（先知乎原生 API → 再 NewsNow 全部平台 → 清理过期数据），各阶段错误隔离互不阻塞，知乎 API 未配置时仍可抓取其他平台。
+- **热点 API 响应格式**：`HotTopicResponse` 新增 `platform`、`platform_name`、`source` 字段，缓存 key 增加 platform 维度避免串扰。
+- **后端 Dockerfile**：新增 `COPY config ./config` 将关键词规则文件打入镜像。
+- **后端日志配置**：`main.py` 新增 `logging.basicConfig(level=logging.INFO)` 确保自定义 logger 输出到容器标准输出。
+- **前端热点广场重写**：从单一列表/历史双视图升级为全部/按平台/按主题/历史四视图，新增平台芯片过滤、标题搜索、关键词分组卡片等交互组件。
 - **知乎热榜 API 鉴权修正**：从 `x-api-key` 改为 `Authorization: Bearer` + `X-Request-Timestamp`，查询参数 `Limit`（大写）对齐官方文档。
 - **热点广场数据源**：从请求驱动拉取改为后台调度器预填充，API 接口直接返回数据库中最新批次数据。
 - **HotTopic 模型**：新增 `fetch_batch`（抓取批次标识）和 `thumbnail_url`（缩略图）字段，新增 Alembic 迁移。

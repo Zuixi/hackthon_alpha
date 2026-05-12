@@ -41,6 +41,7 @@ RUN pip install --no-index --find-links=/tmp/wheels -r requirements.txt \
     && rm -rf /tmp/wheels
 
 COPY app ./app
+COPY config ./config
 COPY alembic ./alembic
 COPY alembic.ini ./
 

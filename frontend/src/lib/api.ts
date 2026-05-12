@@ -43,12 +43,25 @@ export const api = {
   },
 
   hot: {
-    list: (limit = 30) =>
-      request<import('@/types/api').HotTopicListResponse>(`/api/hot?limit=${limit}`),
+    list: (params?: { limit?: number; platform?: string }) => {
+      const qs = new URLSearchParams()
+      if (params?.limit) qs.set('limit', String(params.limit))
+      if (params?.platform) qs.set('platform', params.platform)
+      return request<import('@/types/api').HotTopicListResponse>(`/api/hot?${qs}`)
+    },
     get: (id: string) =>
       request<import('@/types/api').HotTopic>(`/api/hot/${id}`),
-    history: (days = 5) =>
-      request<import('@/types/api').HotHistoryResponse>(`/api/hot/history?days=${days}`),
+    platforms: () =>
+      request<import('@/types/api').PlatformListResponse>('/api/hot/platforms'),
+    grouped: (platform?: string) => {
+      const qs = platform ? `?platform=${platform}` : ''
+      return request<import('@/types/api').GroupedHotResponse>(`/api/hot/grouped${qs}`)
+    },
+    history: (days = 5, platform?: string) => {
+      const qs = new URLSearchParams({ days: String(days) })
+      if (platform) qs.set('platform', platform)
+      return request<import('@/types/api').HotHistoryResponse>(`/api/hot/history?${qs}`)
+    },
   },
 
   chat: {
