@@ -15,6 +15,18 @@ services:
       retries: 10
     restart: unless-stopped
 
+  redis:
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/redis:7-alpine
+    container_name: zhihu_alpha_redis_prod
+    volumes:
+      - redis_data_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -23,9 +35,12 @@ services:
       - ./.env
     environment:
       DATABASE_URL: postgresql://creator:password@postgres:5432/creator_assistant
+      REDIS_URL: redis://redis:6379/0
       CORS_ORIGINS: http://localhost,http://frontend
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     expose:
       - "8000"
@@ -46,3 +61,4 @@ services:
 
 volumes:
   postgres_data_prod:
+  redis_data_prod:

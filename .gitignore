@@ -1,5 +1,5 @@
 # Docs (local reference copies)
-docs/introduction/**
+# docs/introduction/**
 
 # Python
 backend/venv/
@@ -25,4 +25,6 @@ frontend/.env
 
 # Docker volumes
 postgres_data/
+
+.env
 

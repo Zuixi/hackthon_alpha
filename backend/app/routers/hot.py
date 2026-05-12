@@ -6,26 +6,21 @@ from app.database import get_db
 from app.models.hot_topic import HotTopic
 from app.schemas.hot import HotTopicResponse, HotTopicListResponse
 from app.services.zhihu import zhihu_service
+from app.services.cache import cache_get, cache_set
 
 router = APIRouter(prefix="/api/hot", tags=["hot"])
 logger = logging.getLogger(__name__)
 
-_cache: dict = {"data": None, "fetched_at": None}
+CACHE_KEY = "hot:topics"
 CACHE_TTL_SECONDS = 3600
-
-
-def _is_cache_valid() -> bool:
-    if _cache["data"] is None or _cache["fetched_at"] is None:
-        return False
-    age = (datetime.now(timezone.utc) - _cache["fetched_at"]).total_seconds()
-    return age < CACHE_TTL_SECONDS
 
 
 @router.get("", response_model=HotTopicListResponse)
 async def get_hot_topics(limit: int = 50, db: Session = Depends(get_db)):
-    """Get hot topics, using cache to respect API rate limits."""
-    if _is_cache_valid():
-        items = _cache["data"][:limit]
+    """Get hot topics with Redis caching and DB fallback."""
+    cached = cache_get(CACHE_KEY)
+    if cached is not None:
+        items = cached[:limit]
         return HotTopicListResponse(items=items, total=len(items))
 
     try:
@@ -57,14 +52,16 @@ async def get_hot_topics(limit: int = 50, db: Session = Depends(get_db)):
         for t in db_topics:
             db.refresh(t)
 
-        result = [HotTopicResponse.model_validate(t) for t in db_topics]
-        _cache["data"] = result
-        _cache["fetched_at"] = now
+        result = [HotTopicResponse.model_validate(t).model_dump() for t in db_topics]
+        cache_set(CACHE_KEY, result, CACHE_TTL_SECONDS)
 
-        return HotTopicListResponse(items=result[:limit], total=len(result))
+        return HotTopicListResponse(
+            items=[HotTopicResponse(**r) for r in result[:limit]],
+            total=len(result),
+        )
 
     except Exception as e:
-        logger.warning(f"Failed to fetch from Zhihu API: {e}, falling back to DB cache")
+        logger.warning("Failed to fetch from Zhihu API: %s, falling back to DB", e)
         db_topics = (
             db.query(HotTopic)
             .order_by(HotTopic.fetched_at.desc(), HotTopic.hot_score.desc())

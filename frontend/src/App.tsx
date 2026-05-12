@@ -9,6 +9,7 @@ import { HotPage } from '@/pages/hot'
 import { ChatPage } from '@/pages/chat'
 import { ChatSessionPage } from '@/pages/chat-session'
 import { CardsPage } from '@/pages/cards'
+import { SocialPage } from '@/pages/social'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +31,7 @@ export default function App() {
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/chat/:sessionId" element={<ChatSessionPage />} />
               <Route path="/cards" element={<CardsPage />} />
+              <Route path="/social" element={<SocialPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

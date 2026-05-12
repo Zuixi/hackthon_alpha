@@ -9,13 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `README.md` 新增“队伍与项目介绍”板块，补充约 200 字的项目愿景、团队协作方式与核心功能闭环说明，便于在路演和评审场景中快速理解项目价值。
+- **Redis 缓存层**：引入 Redis 7 容器，支持热点数据、关注列表、关注动态的分级缓存（热点 1h、关注列表 5min、关注动态 3min），缓存服务自带连接失败优雅降级。
+- **社交圈页面**：新增 `/social` 路由，提供「关注列表」和「关注动态」双 Tab 视图，关注列表支持分页浏览、头像展示和外链跳转，关注动态以时间线卡片形式展示。
+- **知乎关注列表 API**：后端新增 `GET /api/social/followees`，调用知乎 OAuth `GET /user/followees` 获取用户关注列表，结果缓存到 Redis（5 分钟 TTL）。
+- **知乎关注动态 API**：后端新增 `GET /api/social/moments`，调用知乎 OAuth `GET /user/moments` 获取关注动态，结果缓存到 Redis（3 分钟 TTL）。
+- **侧边栏导航**：新增「社交圈」导航入口。
+- `README.md` 新增"队伍与项目介绍"板块，补充约 200 字的项目愿景、团队协作方式与核心功能闭环说明，便于在路演和评审场景中快速理解项目价值。
 - 新增 `frontend/Dockerfile`，支持前端通过 Docker 容器启动 Vite 服务。
 - 新增 `docker-compose.prod.yml`，提供生产版容器编排（frontend + backend + postgres）。
 - 新增 `frontend/Dockerfile.prod` 与 `frontend/nginx.prod.conf`，支持前端构建产物由 Nginx 提供并同源反代 `/api`。
+- 新增后端协作指南，按模块职责、业务域流程与外部依赖约定描述后端架构，支持 Agent 在不依赖具体文件名的前提下稳定修改后端能力。
 
 ### Fixed
 
+- 知乎 OAuth 回调"`No authorization code received`"问题：前端回调页改为同时解析 query/hash 中的 `code`、`authorization_code`、`auth_code`，并透传更明确的 OAuth 错误信息，避免因参数位置或命名差异导致登录中断。
+- OAuth 重定向一致性问题：`/api/auth/login-url` 与 `/api/auth/callback` 在未显式传入 `redirect_uri` 时统一回退到前端回调地址（`${FRONTEND_URL}/auth/callback`），避免授权后回跳或换 token 因地址不一致失败。
 - `.env` 文件路径解析：`config.py` 自动搜索项目根目录和 backend 目录，不再依赖 CWD。
 - `.env` 变量名与 `config.py` 对齐（`MINIMAX_KEY` → `MINIMAX_API_KEY`，`ZHIHU_ACCESS_SECRET` → `ZHIHU_APP_KEY`）。
 - OAuth 基础 URL 修正为 `https://openapi.zhihu.com`（授权、换 token、获取用户信息），符合官方文档。
@@ -25,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OAuth 登录失败问题：`exchange_oauth_token` 改为请求 `https://openapi.zhihu.com/access_token`，并使用 `application/x-www-form-urlencoded` 传参，避免 `/token` 路径 404 与 JSON 体不被识别。
 - OAuth 错误信息增强：当 token / user 接口返回业务错误结构时，后端会抛出明确错误，便于定位 `app_id/app_key/redirect_uri/code` 不匹配问题。
 - OAuth `redirect_uri` 兼容处理：后端新增规范化逻辑（去首尾空格、仅填写域名时自动补 `/auth/callback`），并在授权链接生成时统一 URL 编码，避免因 `http://127.0.0.1 ` 这类配置导致登录失败。
-- 新增“开发免 OAuth”开关：`BYPASS_OAUTH_LOGIN=true` 时，后端鉴权返回本地调试用户，前端直接判定为已登录，便于快速浏览整站页面效果。
+- 新增"开发免 OAuth"开关：`BYPASS_OAUTH_LOGIN=true` 时，后端鉴权返回本地调试用户，前端直接判定为已登录，便于快速浏览整站页面效果。
 - `backend/app/services/minimax.py` 按 MiniMax Anthropic 兼容文档重写：改用 `https://api.minimaxi.com/anthropic/v1/messages`，消息体升级为 Anthropic `messages/content` 结构，流式解析 `content_block_delta` 的 `text_delta`，更适配 Agent 工作流与 M2 系列模型。
 - 对话流式链路升级：`chat.py` 改为透传 `thinking/text/tool_use` 事件块，前端 `chat-session.tsx` 升级 SSE 解析与渲染，支持在打字机输出正文时同步展示推理过程与工具调用输入。
 - 对话页面的 `thinking` 区块改为默认折叠并支持手动展开/收起，减少长推理内容对正文阅读区域的挤占。
@@ -34,6 +42,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **热点广场 UI 增强**：新增排序切换（热度/时间）、Top3 高亮排名、关注者数量展示、统计栏。
+- **热点缓存迁移**：从内存字典缓存迁移到 Redis 缓存（1 小时 TTL），支持多实例部署下缓存共享。
+- **Docker Compose**：新增 Redis 服务（华为 SWR 镜像源）、后端新增 `REDIS_URL` 环境变量和 Redis 健康检查依赖。
+- `docker-compose.prod.yml` 同步添加 Redis 服务和持久化 volume。
+- `backend/requirements.txt` 新增 `redis` 依赖。
+- `backend/app/config.py` 新增 `REDIS_URL` 配置项。
+- `backend/Dockerfile` 与 `frontend/Dockerfile` 升级为多阶段构建，并补充系统包源替换（Debian 使用清华 apt 镜像、Alpine 使用清华 apk 镜像）；同时保留 Python 清华源与 npm `npmmirror`，并通过选择性复制构建产物缩小最终镜像体积。
+- `backend/app/config.py` 新增 `FRONTEND_URL` 配置项，并将 `ZHIHU_REDIRECT_URI` 默认值对齐到前端回调地址 `http://localhost:5173/auth/callback`。
+- `frontend/AGENTS.md` 按统一规范补充为精简清单版，覆盖前端分层约束、核心业务规则、变更原则与完成标准。
+- `backend/AGENTS.md` 进一步精简为清单式结构，保留核心分层约束、业务规则、变更原则和完成标准，提升可读性与执行效率。
 - `ZHIHU_REDIRECT_URI` 默认值改为 `http://localhost:8000/auth/callback`，适配同源部署模式。
 - `CORS_ORIGINS` 增加 `http://localhost:8000`。
 - OAuth `exchange_oauth_token` 请求增加 `grant_type: authorization_code` 字段。

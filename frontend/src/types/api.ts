@@ -65,3 +65,42 @@ export interface CardListResponse {
   items: IdeaCard[]
   total: number
 }
+
+// Social types
+export interface Followee {
+  uid: number | string
+  hash_id: string
+  fullname: string
+  gender: string
+  headline: string
+  description: string
+  avatar_path: string
+  url: string
+}
+
+export interface MomentActor {
+  name: string
+}
+
+export interface MomentTarget {
+  title: string
+  excerpt: string
+  author: { name: string } | null
+}
+
+export interface Moment {
+  actor: MomentActor
+  action_text: string
+  action_time: number
+  target: MomentTarget | null
+}
+
+export interface FolloweeListResponse {
+  items: Followee[]
+  total: number
+}
+
+export interface MomentListResponse {
+  items: Moment[]
+  total: number
+}

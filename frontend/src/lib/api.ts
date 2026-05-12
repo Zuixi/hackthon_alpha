@@ -107,4 +107,13 @@ export const api = {
         body: JSON.stringify({ content }),
       }),
   },
+
+  social: {
+    followees: (page = 0, perPage = 20) =>
+      request<import('@/types/api').FolloweeListResponse>(
+        `/api/social/followees?page=${page}&per_page=${perPage}`,
+      ),
+    moments: () =>
+      request<import('@/types/api').MomentListResponse>('/api/social/moments'),
+  },
 }

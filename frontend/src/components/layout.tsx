@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, NavLink, Navigate } from 'react-router-dom'
-import { Flame, MessageSquare, Lightbulb, LogOut, Menu } from 'lucide-react'
+import { Flame, MessageSquare, Lightbulb, Users, LogOut, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -10,6 +10,7 @@ const navItems = [
   { to: '/hot', icon: Flame, label: '热点广场' },
   { to: '/chat', icon: MessageSquare, label: '创作对话' },
   { to: '/cards', icon: Lightbulb, label: '灵感卡片' },
+  { to: '/social', icon: Users, label: '社交圈' },
 ]
 
 function SidebarContent({ user, logout, onNavClick }: {

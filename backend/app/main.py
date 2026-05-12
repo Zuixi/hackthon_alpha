@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from app.config import settings
-from app.routers import auth, hot, chat, cards, publish
+from app.routers import auth, hot, chat, cards, publish, social
 
 app = FastAPI(title="知乎创作者助手 API", version="1.0.0")
 
@@ -21,6 +21,7 @@ app.include_router(hot.router)
 app.include_router(chat.router)
 app.include_router(cards.router)
 app.include_router(publish.router)
+app.include_router(social.router)
 
 
 @app.get("/api/health")

@@ -11,12 +11,17 @@ from app.config import settings
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
+def _default_frontend_redirect_uri() -> str:
+    # OAuth should always return to frontend callback page.
+    return f"{settings.FRONTEND_URL.rstrip('/')}/auth/callback"
+
+
 @router.get("/login-url")
 async def get_login_url(redirect_uri: str = ""):
     """Return the Zhihu OAuth authorization URL per official docs:
     https://openapi.zhihu.com/authorize?redirect_uri=...&app_id=...&response_type=code
     """
-    uri = normalize_redirect_uri(redirect_uri)
+    uri = normalize_redirect_uri(redirect_uri or _default_frontend_redirect_uri())
     query = urlencode(
         {"app_id": settings.ZHIHU_APP_ID, "redirect_uri": uri, "response_type": "code"}
     )
@@ -27,7 +32,7 @@ async def get_login_url(redirect_uri: str = ""):
 @router.post("/callback", response_model=TokenResponse)
 async def oauth_callback(req: OAuthCallbackRequest, db: Session = Depends(get_db)):
     """Exchange Zhihu OAuth code for JWT token."""
-    redirect_uri = normalize_redirect_uri(req.redirect_uri)
+    redirect_uri = normalize_redirect_uri(req.redirect_uri or _default_frontend_redirect_uri())
     try:
         token_data = await zhihu_service.exchange_oauth_token(req.code, redirect_uri)
     except Exception as e:

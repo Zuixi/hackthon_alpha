@@ -2,15 +2,45 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '@/lib/api'
 
+function extractOAuthCode(searchParams: URLSearchParams): string {
+  const candidates = ['code', 'authorization_code', 'auth_code']
+
+  for (const key of candidates) {
+    const value = searchParams.get(key)
+    if (value) return value
+  }
+
+  const hash = window.location.hash.startsWith('#')
+    ? window.location.hash.slice(1)
+    : window.location.hash
+  if (!hash) return ''
+
+  const hashParams = new URLSearchParams(hash)
+  for (const key of candidates) {
+    const value = hashParams.get(key)
+    if (value) return value
+  }
+
+  return ''
+}
+
 export function AuthCallback() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const code = searchParams.get('code')
+    const code = extractOAuthCode(searchParams)
     if (!code) {
-      setError('No authorization code received')
+      const providerError =
+        searchParams.get('error_description') ||
+        searchParams.get('error') ||
+        searchParams.get('errmsg')
+      setError(
+        providerError
+          ? `OAuth provider error: ${providerError}`
+          : `No authorization code received. URL: ${window.location.pathname}${window.location.search}${window.location.hash}`,
+      )
       return
     }
 

@@ -14,15 +14,17 @@ _env_file = next((p for p in _env_candidates if p.exists()), ".env")
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://creator:password@localhost:5432/creator_assistant"
+    REDIS_URL: str = "redis://localhost:6379/0"
 
     # MiniMax
     MINIMAX_API_KEY: str = ""
-    MINIMAX_MODEL: str = "MiniMax-M1"
+    MINIMAX_MODEL: str = "MiniMax-M2.7"
 
     # Zhihu OAuth  (base = openapi.zhihu.com per official docs)
     ZHIHU_APP_ID: str = ""
     ZHIHU_APP_KEY: str = ""
-    ZHIHU_REDIRECT_URI: str = "http://localhost:8000/auth/callback"
+    FRONTEND_URL: str = "http://localhost:5173"
+    ZHIHU_REDIRECT_URI: str = "http://localhost:5173/auth/callback"
     ZHIHU_OAUTH_BASE_URL: str = "https://openapi.zhihu.com"
 
     # Zhihu Developer API  (developer.zhihu.com)

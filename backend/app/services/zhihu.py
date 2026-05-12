@@ -97,6 +97,32 @@ class ZhihuService:
             resp.raise_for_status()
             return resp.json()
 
+    # ── Social / OAuth-based APIs ──────────────────────────────────
+    async def get_followees(self, access_token: str, page: int = 0, per_page: int = 20) -> list:
+        """Get list of users the current user follows."""
+        url = f"{self.oauth_base}/user/followees"
+        params = {"page": page, "per_page": per_page}
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                url, headers=self._oauth_headers(access_token), params=params
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if isinstance(data, list):
+                return data
+            return data.get("data", [])
+
+    async def get_moments(self, access_token: str) -> list:
+        """Get the current user's follow feed (moments)."""
+        url = f"{self.oauth_base}/user/moments"
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(url, headers=self._oauth_headers(access_token))
+            resp.raise_for_status()
+            data = resp.json()
+            if isinstance(data, list):
+                return data
+            return data.get("data", [])
+
     async def publish_pin(self, access_token: str, content: str) -> dict:
         """Publish a pin (想法) to Zhihu circle.
         Uses the OAuth access_token for the user.
