@@ -1,0 +1,26 @@
+{
+  "topic-discovery-from-hotspot": {
+    "views": 0,
+    "uses": 0,
+    "created_at": 1778581696.0761788,
+    "last_used_at": null,
+    "last_viewed_at": null,
+    "source": "extracted"
+  },
+  "creative-story-iteration-with-expert-feedback": {
+    "views": 0,
+    "uses": 0,
+    "created_at": 1778639806.911012,
+    "last_used_at": null,
+    "last_viewed_at": null,
+    "source": "merged"
+  },
+  "structured-story-blueprinting": {
+    "views": 0,
+    "uses": 0,
+    "created_at": 1778639806.929596,
+    "last_used_at": null,
+    "last_viewed_at": null,
+    "source": "extracted"
+  }
+}

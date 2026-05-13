@@ -21,6 +21,7 @@ SUMMARIZE global project status/system environment/user preferences/etc BY USING
 - 关键词过滤引擎支持普通词、必须词(+)、排除词(!)、正则(//)、别名(=>)、组名([])、上限(@N) 等语法，规则文件位于 `backend/config/keyword_rules.txt`。
 - 前端热点广场支持四种视图：全部（混合排序）、按平台（分组折叠）、按主题（关键词分组）、历史（按天/批次），并支持平台芯片过滤和标题搜索。
 - 后端新增 `GET /api/hot/source-status` 用于诊断知乎当前来源（按最新批次实际入库 `source` 聚合判定），可快速确认是否已回退到原生 API。
+- 合并高风险分支时优先采用“选择性合并”策略：仅引入目标能力（本次为 `backend/app/agent/*` 与 chat 接入），保留主分支既有热点/社交链路并通过 `docker compose up -d` + 核心接口冒烟验证回归。
 
 ## USER PROFILES
 

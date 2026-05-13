@@ -22,3 +22,4 @@
 - 关键词规则文件 (`backend/config/keyword_rules.txt`) 在 Docker 构建时需要显式 COPY 到镜像中，Dockerfile 需包含 `COPY config ./config`。
 - Python `logging.basicConfig` 必须在 main.py 中显式调用，否则自定义 logger 的 INFO 级日志不会输出到容器标准输出。
 - `/api/hot/source-status` 仅基于“最新 `fetch_batch` 中 `platform=zhihu` 的实际入库记录”判断来源；当该批无知乎数据时，结果应为 `unknown`，不能直接从环境变量推断为真实抓取来源。
+- 合并 `agent` 分支到 `main` 前，先在 `main` 上执行 `git fetch --all --prune` 并用 `git diff --name-status main..origin/agent` 预览改动范围；合并后必须完成一次 rebuild + re-run 验证，避免优化改动影响主链路功能。

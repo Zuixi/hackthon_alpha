@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- 安全合并 `agent` 分支的 Agent 优化能力到 `main`：仅引入 `backend/app/agent/*`、`chat` 路由与 Agent 工具服务，保留 `main` 现有热点/社交链路不变；同时补齐配置与依赖兼容（含 `redis` 保留与开发者 API 凭证回退）。
 - 热榜调度器新增 `HOT_ZHIHU_SOURCE_MODE`（`newsnow_first`/`newsnow_only`/`native_only`）知乎来源策略：默认先走 NewsNow（含知乎源），仅在 NewsNow 未抓到知乎时回退知乎原生 API，降低比赛期间原生接口额度消耗风险。
 - **HotTopic 模型扩展**：新增 `platform`（平台标识）和 `source`（数据来源）字段，新增 Alembic 迁移，现有数据自动回填为 `zhihu` / `zhihu_api`。
 - **热榜调度器升级**：从单一知乎抓取改为多阶段调度（先知乎原生 API → 再 NewsNow 全部平台 → 清理过期数据），各阶段错误隔离互不阻塞，知乎 API 未配置时仍可抓取其他平台。
