@@ -25,7 +25,8 @@ _FINISH_REASON_MAP = {
     "stop": "stop",
     "tool_calls": "tool_calls",
     "length": "length",
-    "content_filter": "stop",
+    "content_filter": "content_filter",
+    "sensitive": "content_filter",
 }
 
 

@@ -26,7 +26,16 @@ _FINISH_REASON_MAP = {
     "stop_sequence": "stop",
     "tool_use": "tool_calls",
     "max_tokens": "length",
+    "content_filter": "content_filter",
+    "sensitive": "content_filter",
 }
+
+_SENSITIVE_MARKERS = [
+    "output new sensitive",
+    "output new sensetive",
+    "content is sensitive",
+    "sensitive content",
+]
 
 
 class MiniMaxTransport(ProviderTransport):
@@ -106,7 +115,13 @@ class MiniMaxTransport(ProviderTransport):
                         continue
 
                     if data.get("type") == "error":
-                        yield {"type": "error", "message": data.get("error", {}).get("message", "Unknown")}
+                        err_msg = data.get("error", {}).get("message", "Unknown")
+                        err_lower = err_msg.lower()
+                        if any(m in err_lower for m in _SENSITIVE_MARKERS):
+                            logger.warning("MiniMax content filter triggered (error event): %s", err_msg)
+                            yield {"type": "done", "stop_reason": "content_filter"}
+                        else:
+                            yield {"type": "error", "message": err_msg}
                         return
 
                     event_type = data.get("type")
@@ -149,7 +164,13 @@ class MiniMaxTransport(ProviderTransport):
                         delta_type = delta.get("type")
 
                         if delta_type == "text_delta" and delta.get("text"):
-                            yield {"type": "text_delta", "content": delta["text"]}
+                            text = delta["text"]
+                            text_lower = text.lower().strip()
+                            if any(m in text_lower for m in _SENSITIVE_MARKERS):
+                                logger.warning("MiniMax content filter in text_delta: %s", text)
+                                yield {"type": "done", "stop_reason": "content_filter"}
+                                return
+                            yield {"type": "text_delta", "content": text}
                         elif delta_type == "thinking_delta" and delta.get("thinking"):
                             yield {"type": "thinking_delta", "content": delta["thinking"]}
                         elif delta_type == "input_json_delta" and delta.get("partial_json"):

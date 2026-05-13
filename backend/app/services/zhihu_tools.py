@@ -508,6 +508,140 @@ async def zhihu_story_detail(work_id: str) -> dict:
         return {"error": str(e)}
 
 
+SUPPORTED_PLATFORMS = [
+    "zhihu", "weibo", "bilibili", "douyin",
+    "toutiao", "baidu", "36kr", "ithome",
+]
+
+
+async def hot_topics_multiplatform(platform: str = "", limit: int = 20) -> dict:
+    """获取多平台热点话题（来自数据库，由后台调度器定期采集）。"""
+    from app.database import SessionLocal
+    from app.models.hot_topic import HotTopic
+    from sqlalchemy import desc
+
+    db = SessionLocal()
+    try:
+        query = db.query(HotTopic)
+        if platform:
+            query = query.filter(HotTopic.platform == platform.lower())
+        topics = (
+            query.order_by(desc(HotTopic.fetched_at), desc(HotTopic.hot_score))
+            .limit(min(limit, 50))
+            .all()
+        )
+        items = []
+        for t in topics:
+            items.append({
+                "id": t.id,
+                "title": t.title,
+                "platform": t.platform,
+                "hot_score": t.hot_score,
+                "url": t.url or "",
+                "excerpt": (t.excerpt or "")[:150],
+            })
+        return {
+            "platform": platform or "all",
+            "total": len(items),
+            "items": items,
+        }
+    except Exception as e:
+        logger.error("hot_topics_multiplatform error: %s", e)
+        return {"error": str(e)}
+    finally:
+        db.close()
+
+
+async def hot_topics_grouped(platform: str = "") -> dict:
+    """按关键词分组的热点话题，便于分析特定领域的热点分布。"""
+    from app.database import SessionLocal
+    from app.models.hot_topic import HotTopic
+    from app.services.keyword_filter import get_keyword_rules, group_topics_by_keywords
+    from sqlalchemy import desc
+
+    db = SessionLocal()
+    try:
+        query = db.query(HotTopic)
+        if platform:
+            query = query.filter(HotTopic.platform == platform.lower())
+        topics = (
+            query.order_by(desc(HotTopic.fetched_at), desc(HotTopic.hot_score))
+            .limit(200)
+            .all()
+        )
+        topic_dicts = [
+            {"id": t.id, "title": t.title, "platform": t.platform,
+             "hot_score": t.hot_score, "url": t.url or ""}
+            for t in topics
+        ]
+
+        word_groups, filter_words, global_filters = get_keyword_rules()
+        grouped, unmatched = group_topics_by_keywords(
+            topic_dicts, word_groups, filter_words, global_filters
+        )
+
+        result_groups = {}
+        for group_name, group_topics in grouped.items():
+            result_groups[group_name] = {
+                "count": len(group_topics),
+                "topics": group_topics[:10],
+            }
+
+        return {
+            "platform": platform or "all",
+            "groups": result_groups,
+            "unmatched_count": len(unmatched),
+        }
+    except Exception as e:
+        logger.error("hot_topics_grouped error: %s", e)
+        return {"error": str(e)}
+    finally:
+        db.close()
+
+
+MULTIPLATFORM_TOOL_DEFINITIONS: list[dict[str, Any]] = [
+    {
+        "name": "hot_topics_multiplatform",
+        "description": (
+            "获取多平台热点话题。支持知乎、微博、B站、抖音、头条、百度等平台。"
+            "不指定平台则返回全平台热点。可用于跨平台热点对比分析。"
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "platform": {
+                    "type": "string",
+                    "description": f"平台名称，可选值: {', '.join(SUPPORTED_PLATFORMS)}。留空返回全平台。",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "返回条数，默认20，最多50",
+                    "default": 20,
+                },
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "hot_topics_grouped",
+        "description": (
+            "按关键词分组的热点话题。将热点按预设的领域关键词（如科技、财经、娱乐等）自动分组，"
+            "便于快速了解特定领域的热点分布和趋势。"
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "platform": {
+                    "type": "string",
+                    "description": f"平台名称，可选值: {', '.join(SUPPORTED_PLATFORMS)}。留空为全平台。",
+                },
+            },
+            "required": [],
+        },
+    },
+]
+
+
 TOOL_DISPATCH: dict[str, Any] = {
     "zhihu_hot_list": zhihu_hot_list,
     "zhihu_search": zhihu_search,
@@ -520,6 +654,8 @@ TOOL_DISPATCH: dict[str, Any] = {
     "zhihu_get_comments": zhihu_get_comments,
     "zhihu_story_list": zhihu_story_list,
     "zhihu_story_detail": zhihu_story_detail,
+    "hot_topics_multiplatform": hot_topics_multiplatform,
+    "hot_topics_grouped": hot_topics_grouped,
 }
 
 
