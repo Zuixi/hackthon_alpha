@@ -1,5 +1,5 @@
 ---
-name: frontend-patterns-react-vite
+name: frontend-design
 description: Production frontend patterns for React + Vite + TypeScript + Tailwind CSS + shadcn/ui. Use when building UI features, forms, data fetching, performance optimizations, accessibility fixes, or component architecture in this stack.
 disable-model-invocation: true
 ---

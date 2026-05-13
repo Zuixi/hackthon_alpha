@@ -143,10 +143,32 @@ export interface Moment {
 
 export interface FolloweeListResponse {
   items: Followee[]
-  total: number
+  page: {
+    page: number
+    per_page: number
+    items_count: number
+    has_more: boolean
+    is_end: boolean
+    next_page: number | null
+    total: number | null
+  }
 }
 
 export interface MomentListResponse {
   items: Moment[]
   total: number
+}
+
+export interface FollowerSnapshotItem {
+  snapshot_date: string
+  follower_count: number
+  delta: number | null
+  refreshed_at: string
+}
+
+export interface FollowerStatsResponse {
+  items: FollowerSnapshotItem[]
+  total_days: number
+  latest_count: number | null
+  next_refresh_at: string
 }

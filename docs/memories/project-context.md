@@ -22,6 +22,10 @@ SUMMARIZE global project status/system environment/user preferences/etc BY USING
 - 前端热点广场支持四种视图：全部（混合排序）、按平台（分组折叠）、按主题（关键词分组）、历史（按天/批次），并支持平台芯片过滤和标题搜索。
 - 后端新增 `GET /api/hot/source-status` 用于诊断知乎当前来源（按最新批次实际入库 `source` 聚合判定），可快速确认是否已回退到原生 API。
 - 合并高风险分支时优先采用“选择性合并”策略：仅引入目标能力（本次为 `backend/app/agent/*` 与 chat 接入），保留主分支既有热点/社交链路并通过 `docker compose up -d` + 核心接口冒烟验证回归。
+- 社交圈已扩展粉丝能力：新增 `followers` 列表与按天快照统计，粉丝数由后台调度器按 `Asia/Shanghai` 每日 20:00 固定采集；前端分页必须使用后端返回的 `has_more/is_end`，禁止硬编码页大小推断是否可翻页。
+- 热点广场体验策略：`全部` 视图默认采用卡片布局，平台筛选区保持全量平台平铺，避免通过 `+N` 折叠隐藏平台入口。
+- 热点广场平台筛选在窄屏使用横向滚动（`overflow-x-auto + min-w-max`），在较宽屏幕继续允许换行，兼顾可达性与信息密度。
+- 热点广场 UI 已按 `ui-polish.md` 精细化重构：排名 10 级渐变色阶、平台品牌色圆点、状态 Badge（新上榜/飙升/高热/下降中）、Sparkline SVG 趋势图、热度值格式化（w/亿）、Hover 滑入操作按钮组、列表/卡片双视图切换（localStorage 持久化）、改进的骨架屏和空状态；状态和趋势数据为前端 Mock，后端扩展后可无缝切换。
 
 ## USER PROFILES
 

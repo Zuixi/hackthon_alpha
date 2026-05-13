@@ -7,7 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **登录页全新设计**：参考 `zhihu-creator-demo.html` 设计稿重写登录页，采用玻璃拟态卡片布局，包含：
+  - 中央主卡片：Logo + 标题打字机副标题 + 功能胶囊标签 + 知乎账号登录按钮 + 社交证明
+  - 桌面端四张浮动功能预览卡（热点发现、智能对话、灵感沉淀、数据洞察），fly-in 动画入场
+  - 顶部热点 marquee 滚动条、背景散落卡片、鼠标跟随光晕效果
+  - 移除"先体验一下"入口，仅保留知乎 OAuth 登录
+
+- **热点广场 UI 精细化重构**：按 `ui-polish.md` 设计规范全面升级，包括：
+  - 排名徽章 10 级渐变色阶（Top1 红/Top2 橙/Top3 金/4-5 深灰/6-7 中灰/8-10 浅灰/11+ 淡灰）
+  - 平台标签新增品牌色圆点标识
+  - 新增状态 Badge 系统（新上榜/热度飙升/持续高热/下降中），前端 Mock 数据驱动
+  - 新增 Sparkline 迷你 SVG 趋势图（56×22px，7 数据点）
+  - 热度值格式化展示（≥1万显示 "1.2w"，≥1亿显示 "1.2亿"）
+  - 操作按钮组改为 Hover 滑入动画（translateX + opacity 过渡）
+  - 平台筛选器重构为快捷胶囊 + "+N 更多" 下拉面板
+  - 新增列表/卡片双视图切换（偏好存 localStorage）
+  - 骨架屏升级为与真实布局一致的结构（列表/卡片两套）
+  - 空状态增加友好提示文案和操作引导
+  - Header 新增上次更新时间标签
+
 ### Added
+
+- 社交圈新增粉丝能力：后端新增 `GET /api/social/followers` 与 `GET /api/social/followers/stats`，前端社交页新增「粉丝列表」Tab 与最近 7 天粉丝数变化展示。
+- 新增粉丝日快照表 `social_follower_snapshots`（Alembic 迁移：`c5d6e7f8a9b0`），按用户保存每日粉丝数。
+- 新增后台粉丝快照调度器：固定 `Asia/Shanghai` 每天 20:00 后自动补采当日粉丝数，支持失败隔离和缓存失效。
 
 - 热点诊断接口 `GET /api/hot/source-status`：返回知乎当前抓取来源判定（`newsnow`/`zhihu_api`/`mixed`/`unknown`）、最新批次号与来源分布计数，便于快速确认是否触发原生 API 回退。
 - **多平台热点聚合**：热点广场从单一知乎数据源升级为 8 平台聚合（知乎、微博、抖音、今日头条、B站、百度、澎湃新闻、贴吧），知乎使用原生 API，其余平台通过 NewsNow 聚合 API 抓取。
@@ -33,6 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- 社交圈“关注列表不全”问题：分页不再依赖前端硬编码页大小判断，改为服务端返回 `has_more/is_end` 元数据驱动翻页，避免首屏误判无下一页。
+
 - 知乎 OAuth 回调"`No authorization code received`"问题：前端回调页改为同时解析 query/hash 中的 `code`、`authorization_code`、`auth_code`，并透传更明确的 OAuth 错误信息，避免因参数位置或命名差异导致登录中断。
 - OAuth 重定向一致性问题：`/api/auth/login-url` 与 `/api/auth/callback` 在未显式传入 `redirect_uri` 时统一回退到前端回调地址（`${FRONTEND_URL}/auth/callback`），避免授权后回跳或换 token 因地址不一致失败。
 - `.env` 文件路径解析：`config.py` 自动搜索项目根目录和 backend 目录，不再依赖 CWD。
@@ -53,6 +80,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 热榜调度调用开发者接口 404 问题：`ZHIHU_DEV_BASE_URL` 默认值与示例配置统一修正为 `https://developer.zhihu.com`。
 
 ### Changed
+
+- 热点广场交互细节调整：`全部` 视图默认布局改为卡片模式（card），平台筛选条改为全量平铺展示，移除 `+N` 折叠入口，提升首屏可读性与筛选直达性。
+- 热点广场平台筛选在窄屏下改为横向滚动容器（大屏保持换行），避免平台数量较多时 chips 区域过度换行挤压主内容。
+
+- 社交接口响应契约升级：`followees`/`followers` 统一返回分页对象（`page/per_page/items_count/has_more/is_end/next_page/total`），便于前端与后续统计能力复用。
 
 - 安全合并 `agent` 分支的 Agent 优化能力到 `main`：仅引入 `backend/app/agent/*`、`chat` 路由与 Agent 工具服务，保留 `main` 现有热点/社交链路不变；同时补齐配置与依赖兼容（含 `redis` 保留与开发者 API 凭证回退）。
 - 热榜调度器新增 `HOT_ZHIHU_SOURCE_MODE`（`newsnow_first`/`newsnow_only`/`native_only`）知乎来源策略：默认先走 NewsNow（含知乎源），仅在 NewsNow 未抓到知乎时回退知乎原生 API，降低比赛期间原生接口额度消耗风险。

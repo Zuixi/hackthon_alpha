@@ -23,3 +23,10 @@
 - Python `logging.basicConfig` 必须在 main.py 中显式调用，否则自定义 logger 的 INFO 级日志不会输出到容器标准输出。
 - `/api/hot/source-status` 仅基于“最新 `fetch_batch` 中 `platform=zhihu` 的实际入库记录”判断来源；当该批无知乎数据时，结果应为 `unknown`，不能直接从环境变量推断为真实抓取来源。
 - 合并 `agent` 分支到 `main` 前，先在 `main` 上执行 `git fetch --all --prune` 并用 `git diff --name-status main..origin/agent` 预览改动范围；合并后必须完成一次 rebuild + re-run 验证，避免优化改动影响主链路功能。
+- 知乎 OAuth 社交接口分页条数不能在前端硬编码（如固定 20）；是否还有下一页应优先依据服务端返回的分页状态（如 `is_end/has_more`）或后端统一推导结果，否则会出现“实际有更多数据但分页按钮被禁用”的假性数据不全。
+- 热点广场 UI 重构后，`TopicItem` 组件已拆分为 `HotspotRow`（列表视图）和 `HotspotCard`（卡片视图），修改热点列表项时需两处同步更新。
+- 热点状态 Badge（新上榜/飙升/高热/下降中）和 Sparkline 趋势图当前为前端 Mock 数据（基于排名位置推算），后端如需提供真实数据需扩展 `status`/`trend` 字段。
+- `PlatformChips` 组件中的 "+N 更多" 下拉面板使用固定覆盖层关闭，点击外部需依赖 `fixed inset-0` 遮罩层实现，修改时注意 z-index 层级。
+- 登录页自定义样式（玻璃态、fly-in 动画、marquee 等）以 `login-` 前缀命名，统一放在 `frontend/src/index.css` 末尾，避免与 shadcn/ui 或其他页面样式冲突。
+- 热点广场“全部”视图的默认布局应为卡面（card）；平台筛选应全量平铺展示，避免 `+N` 折叠造成平台可见性不一致。
+- 平台筛选（PlatformChips）在平台较多且窄屏时应使用“外层横向滚动 + 内层 `min-w-max`”结构，避免大量换行导致筛选区过高挤压内容区。

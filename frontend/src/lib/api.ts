@@ -128,6 +128,14 @@ export const api = {
       request<import('@/types/api').FolloweeListResponse>(
         `/api/social/followees?page=${page}&per_page=${perPage}`,
       ),
+    followers: (page = 0, perPage = 20) =>
+      request<import('@/types/api').FolloweeListResponse>(
+        `/api/social/followers?page=${page}&per_page=${perPage}`,
+      ),
+    followerStats: (days = 30) =>
+      request<import('@/types/api').FollowerStatsResponse>(
+        `/api/social/followers/stats?days=${days}`,
+      ),
     moments: () =>
       request<import('@/types/api').MomentListResponse>('/api/social/moments'),
   },
