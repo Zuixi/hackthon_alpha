@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **生产部署方案**：覆盖安全加固、自动化构建部署、可靠性运维的完整部署体系：
+  - 新增 `backend/Dockerfile.prod`：生产专用，使用通用多平台基础镜像（amd64 原生构建）
+  - 新增 `ops/build.sh`：om 构建机一键拉取代码 + 构建镜像 + 保存到 `images/`
+  - 新增 `ops/deploy.sh`：从 `images/` 传输到 seed 服务器并启动
+  - 新增 `ops/backup.sh`：PostgreSQL 每日自动备份，保留 7 天
+  - 新增 `ops/healthcheck.sh`：每 5 分钟健康检查，失败自动重启后端
+  - 新增 `ops/server-init.sh`：目标服务器首次初始化（Nginx/Certbot/Docker/cron）
+  - 新增 `ops/nginx-host.conf`：宿主机 Nginx HTTPS 反向代理 + SSE 支持
+  - 新增 `.env.prod.example`：生产环境变量模板
+
+### Changed
+
+- **docker-compose.prod.yml 安全加固**：
+  - 改为使用预构建镜像（`image:`）替代 `build:`，配合 ops 脚本交付
+  - 数据库密码、Redis 密码变量化，启动时强制校验（`${VAR:?required}`）
+  - Redis 启用密码认证 + AOF 持久化
+  - 新增 Docker 内部网络隔离（PostgreSQL/Redis 不暴露到宿主机）
+  - 所有服务添加日志轮转（max-size 10m, max-file 3）
+  - 后端/前端添加资源限制（memory/cpus）
+- **frontend/Dockerfile.prod**：基础镜像去掉 `linuxarm64` 后缀，使用多平台自动匹配
+- **frontend/nginx.prod.conf**：新增安全响应头、gzip 压缩、静态资源长期缓存、SSE 超时配置
+- `.gitignore` 新增 `images/`（构建产物）和 `.env.prod`（生产密钥）排除
+- `docs/deploy.md` 重写为完整部署操作手册
+
 ### Changed
 
 - **登录页全新设计**：参考 `zhihu-creator-demo.html` 设计稿重写登录页，采用玻璃拟态卡片布局，包含：

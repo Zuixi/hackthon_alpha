@@ -26,5 +26,11 @@ frontend/.env
 # Docker volumes
 postgres_data/
 
+# Docker images (built by ops/build.sh)
+images/
+
+# Production env (secrets)
+.env.prod
+
 .env
 

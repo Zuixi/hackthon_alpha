@@ -30,3 +30,9 @@
 - 登录页自定义样式（玻璃态、fly-in 动画、marquee 等）以 `login-` 前缀命名，统一放在 `frontend/src/index.css` 末尾，避免与 shadcn/ui 或其他页面样式冲突。
 - 热点广场“全部”视图的默认布局应为卡面（card）；平台筛选应全量平铺展示，避免 `+N` 折叠造成平台可见性不一致。
 - 平台筛选（PlatformChips）在平台较多且窄屏时应使用“外层横向滚动 + 内层 `min-w-max`”结构，避免大量换行导致筛选区过高挤压内容区。
+- 生产部署的 Dockerfile 与开发 Dockerfile 分离：`backend/Dockerfile`（arm64 开发）和 `backend/Dockerfile.prod`（多平台生产），`frontend/Dockerfile`（arm64 开发）和 `frontend/Dockerfile.prod`（多平台生产）。改动构建流程时需注意同步。
+- 生产环境 `docker-compose.prod.yml` 使用预构建镜像（`image:`），不使用 `build:`；镜像版本通过 `DEPLOY_VERSION` 环境变量注入。
+- 生产环境数据库密码和 Redis 密码通过 `.env.prod` 注入，`docker-compose.prod.yml` 中使用 `${VAR:?required}` 语法强制校验，启动时缺失会直接报错。
+- 生产 Redis 启用了密码认证，`REDIS_URL` 格式必须为 `redis://:${REDIS_PASSWORD}@redis:6379/0`（注意冒号前无用户名）。
+- `images/` 目录用于存放构建产物（tar.gz），已在 `.gitignore` 中排除，不入仓库。
+- 部署流程分两步：先在 om 构建机执行 `ops/build.sh` 构建镜像，再执行 `ops/deploy.sh` 传输到 seed 服务器。

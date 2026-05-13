@@ -26,6 +26,9 @@ SUMMARIZE global project status/system environment/user preferences/etc BY USING
 - 热点广场体验策略：`全部` 视图默认采用卡片布局，平台筛选区保持全量平台平铺，避免通过 `+N` 折叠隐藏平台入口。
 - 热点广场平台筛选在窄屏使用横向滚动（`overflow-x-auto + min-w-max`），在较宽屏幕继续允许换行，兼顾可达性与信息密度。
 - 热点广场 UI 已按 `ui-polish.md` 精细化重构：排名 10 级渐变色阶、平台品牌色圆点、状态 Badge（新上榜/飙升/高热/下降中）、Sparkline SVG 趋势图、热度值格式化（w/亿）、Hover 滑入操作按钮组、列表/卡片双视图切换（localStorage 持久化）、改进的骨架屏和空状态；状态和趋势数据为前端 Mock，后端扩展后可无缝切换。
+- 生产部署采用两阶段流水线：om 构建机（amd64）构建镜像保存到 `images/` -> SCP 传输到 seed 服务器加载启动；运维脚本统一在 `ops/` 目录。
+- 生产环境使用宿主机 Nginx + Let's Encrypt 做 SSL 终止，Docker 内部走 HTTP；Redis 启用密码认证 + AOF 持久化；数据库每日自动备份。
+- 开发用 Dockerfile（arm64 SWR 镜像源）与生产用 Dockerfile.prod（通用多平台镜像）分离，互不干扰。
 
 ## USER PROFILES
 
