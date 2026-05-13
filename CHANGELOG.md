@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **登录页视觉精简（P0 优化）**：按 `docs/opt/login-polish.md` 建议完成两项核心改造：
+  - **减法重构**：移除 12 张随机散布的背景小卡片（`ScatteredCards`）和"数据洞察"悬浮徽章（`FeatureCardStats`），仅保留与产品三大模块对应的 3 张功能卡片（热点发现 / 智能对话 / 灵感沉淀）
+  - **卡片内容精简**：每张功能卡片缩减为「图标 + 标题 + 一行核心文案」，宽度统一收窄至 `w-60`，去掉列表、按钮、二级标签等杂项元素
+  - **玻璃质感重建**：背景替换为带品牌色调的渐变（`#f0f4f8 → #f5f0ff → #f0f9ff`）并新增三个彩色 orb 光斑（琥珀 / 紫色 / 青色），为 `backdrop-filter` 提供有效折射层；`.login-glass-card` 增强内发光（`inset 0 1px 0 rgba(255,255,255,0.9)`），`.login-glass-feature` 补充 `box-shadow` 提升悬浮感
+
 ### Added
 
 - **生产部署方案**：覆盖安全加固、自动化构建部署、可靠性运维的完整部署体系：

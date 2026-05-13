@@ -21,7 +21,7 @@ function SidebarContent({ user, logout, onNavClick }: {
   return (
     <>
       <div className="p-4 border-b">
-        <h1 className="text-lg font-bold text-foreground">知乎创作助手</h1>
+        <h1 className="text-lg font-bold text-foreground">AlphaBot 创作助手</h1>
         <p className="text-xs text-muted-foreground mt-1">AI 驱动的内容创作平台</p>
       </div>
 
@@ -99,7 +99,7 @@ export function Layout() {
               <SidebarContent user={user} logout={logout} onNavClick={() => setMobileOpen(false)} />
             </SheetContent>
           </Sheet>
-          <h1 className="text-base font-bold">知乎创作助手</h1>
+          <h1 className="text-base font-bold">AlphaBot 创作助手</h1>
         </header>
 
         <main className="flex-1 overflow-auto">

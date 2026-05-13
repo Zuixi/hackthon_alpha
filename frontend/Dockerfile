@@ -32,6 +32,7 @@ COPY index.html ./
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY vite.config.ts ./
+COPY public ./public
 COPY src ./src
 
 EXPOSE 5173
