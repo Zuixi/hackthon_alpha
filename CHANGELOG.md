@@ -7,8 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [20260514_022341] - 2026-05-14
+
+### Fixed
+
+- `chat-session.tsx` 删除未使用的 `useMemo` import，修复生产构建 TypeScript 报错（TS6133）
+
+### Deployed
+
+- 版本 `20260514_022341` 部署至生产环境，镜像归档于 `/root/images/zhihu_alpha_20260514_022341.tar.gz`（157M）
+- 健康检查通过：`GET /api/health → {"status":"ok"}`
+
 ### Changed
 
+- 部署技能 `deploying-zhihu-alpha` 增加 SSH 前置检查：连接 `seed` 前先清理本地 `http_proxy/https_proxy`（含大写变量），避免代理导致 SSH 连接或发布流程异常。
 - **社交圈页重设计**：参照 `docs/opt/author.md` 设计稿，将「社交圈」全面重构为「读者洞察」风格：
   - **页头**：标题改为「读者洞察」，携带「数据追踪」徽章；Tab 导航改为胶囊 pill 样式
   - **粉丝列表顶部三栏洞察卡片**：「粉丝总数」（展示 latest_count + 最新快照 delta）、「近7日走势」（迷你柱状图，基于快照数据动态渲染）、「增长概览」（增长天数 / 累计变化 / 快照条数），均使用真实 API 数据
@@ -24,7 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- 新增项目级部署技能 `.cursor/skills/deploying-root-zhihu-alpha/SKILL.md`：固定以 `/root/zhihu_alpha` 为生产发布目录，提供从 `ssh seed` 到镜像构建、`docker compose` 发布、健康检查与回滚的可执行步骤。
+- 新增根目录一键部署脚本 `deploy.sh`：在服务器代码目录执行即可完成拉取 `main`、构建生产镜像、导出 `/root/images`、在 `/root/zhihu_alpha` 执行 compose 发布以及健康检查重试。
+- 新增项目级部署技能 `.cursor/skills/deploying-zhihu-alpha/SKILL.md`：固定以 `/root/zhihu_alpha` 为生产发布目录，提供从 `ssh seed` 到镜像构建、`docker compose` 发布、健康检查与回滚的可执行步骤。
 - **生产部署方案**：覆盖安全加固、自动化构建部署、可靠性运维的完整部署体系：
   - 新增 `backend/Dockerfile.prod`：生产专用，使用通用多平台基础镜像（amd64 原生构建）
   - 新增 `ops/build.sh`：om 构建机一键拉取代码 + 构建镜像 + 保存到 `images/`
