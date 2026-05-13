@@ -34,5 +34,7 @@ images/
 
 # Runtime data (sessions, memories, tool outputs)
 backend/data/
+docs/opt/
+.cursor/skills/deploying-zhihu-alpha
 
 .env

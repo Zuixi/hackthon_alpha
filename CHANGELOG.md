@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **社交圈页重设计**：参照 `docs/opt/author.md` 设计稿，将「社交圈」全面重构为「读者洞察」风格：
+  - **页头**：标题改为「读者洞察」，携带「数据追踪」徽章；Tab 导航改为胶囊 pill 样式
+  - **粉丝列表顶部三栏洞察卡片**：「粉丝总数」（展示 latest_count + 最新快照 delta）、「近7日走势」（迷你柱状图，基于快照数据动态渲染）、「增长概览」（增长天数 / 累计变化 / 快照条数），均使用真实 API 数据
+  - **人物卡片（`PersonCard`）**：复用于粉丝和关注列表，增加 `hover:-translate-y-0.5` 悬浮效果、圆角 `rounded-2xl`、更精致的头像/标签布局
+  - **动态卡片（`MomentCard`）**：卡片化设计，内嵌内容块使用 `rounded-xl bg-slate-50` 层次感
+  - **分页组件抽取**：提取 `Pagination` 复用组件消除重复代码
+  - Tab 顺序调整为：粉丝列表 → 关注列表 → 关注动态；所有原有 API 调用和分页逻辑完整保留
+
 - **登录页视觉精简（P0 优化）**：按 `docs/opt/login-polish.md` 建议完成两项核心改造：
   - **减法重构**：移除 12 张随机散布的背景小卡片（`ScatteredCards`）和"数据洞察"悬浮徽章（`FeatureCardStats`），仅保留与产品三大模块对应的 3 张功能卡片（热点发现 / 智能对话 / 灵感沉淀）
   - **卡片内容精简**：每张功能卡片缩减为「图标 + 标题 + 一行核心文案」，宽度统一收窄至 `w-60`，去掉列表、按钮、二级标签等杂项元素
@@ -16,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- 新增项目级部署技能 `.cursor/skills/deploying-root-zhihu-alpha/SKILL.md`：固定以 `/root/zhihu_alpha` 为生产发布目录，提供从 `ssh seed` 到镜像构建、`docker compose` 发布、健康检查与回滚的可执行步骤。
 - **生产部署方案**：覆盖安全加固、自动化构建部署、可靠性运维的完整部署体系：
   - 新增 `backend/Dockerfile.prod`：生产专用，使用通用多平台基础镜像（amd64 原生构建）
   - 新增 `ops/build.sh`：om 构建机一键拉取代码 + 构建镜像 + 保存到 `images/`
