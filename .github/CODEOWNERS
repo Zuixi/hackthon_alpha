@@ -1,0 +1,6 @@
+# 高风险配置与部署资产需要额外审核
+docs/deploy.md @Zuixi
+docs/security/* @Zuixi
+ops/* @Zuixi
+docker-compose.prod.yml @Zuixi
+.env.prod.example @Zuixi

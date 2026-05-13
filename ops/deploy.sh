@@ -1,14 +1,15 @@
 #!/bin/bash
-# 从 om 构建机传输镜像到 seed 目标服务器并启动
+# 从构建机传输镜像到目标服务器并启动
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
-SERVER="seed"
+SERVER="${DEPLOY_HOST:-seed}"
 IMAGES_DIR="./images"
-REMOTE_DEPLOY="/root/zhihu_alpha"
+REMOTE_DEPLOY="${REMOTE_DEPLOY:-/opt/zhihu_alpha}"
+APP_DOMAIN="${APP_DOMAIN:-<APP_DOMAIN>}"
 
 VERSION=${1:-}
 if [ -z "$VERSION" ]; then
@@ -42,4 +43,4 @@ REMOTE
 
 echo ""
 echo "Deploy complete: ${VERSION}"
-echo "Site: https://zppy.funnytop.club"
+echo "Site: https://${APP_DOMAIN}"

@@ -1,10 +1,17 @@
 #!/bin/bash
-# 在 seed 服务器上执行：健康检查，失败时自动重启后端
-# Cron: */5 * * * * /root/zhihu_alpha/ops/healthcheck.sh >> /var/log/zhihu_health.log 2>&1
+# 在目标服务器上执行：健康检查，失败时自动重启后端
+# Cron: */5 * * * * <DEPLOY_DIR>/ops/healthcheck.sh >> /var/log/zhihu_health.log 2>&1
 set -euo pipefail
 
-URL="https://zppy.funnytop.club/api/health"
-DEPLOY_DIR="/root/zhihu_alpha"
+APP_DOMAIN=${APP_DOMAIN:-<APP_DOMAIN>}
+DEPLOY_DIR=${DEPLOY_DIR:-/opt/zhihu_alpha}
+
+if [ "${APP_DOMAIN}" = "<APP_DOMAIN>" ]; then
+  echo "[$(date)] ERROR: APP_DOMAIN is not configured."
+  exit 1
+fi
+
+URL="https://${APP_DOMAIN}/api/health"
 
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${URL}" 2>/dev/null || echo "000")
 

@@ -35,4 +35,5 @@
 - 生产环境数据库密码和 Redis 密码通过 `.env.prod` 注入，`docker-compose.prod.yml` 中使用 `${VAR:?required}` 语法强制校验，启动时缺失会直接报错。
 - 生产 Redis 启用了密码认证，`REDIS_URL` 格式必须为 `redis://:${REDIS_PASSWORD}@redis:6379/0`（注意冒号前无用户名）。
 - `images/` 目录用于存放构建产物（tar.gz），已在 `.gitignore` 中排除，不入仓库。
-- 部署流程分两步：先在 om 构建机执行 `ops/build.sh` 构建镜像，再执行 `ops/deploy.sh` 传输到 seed 服务器。
+- 部署流程分两步：先在 BUILD_HOST 执行 `ops/build.sh` 构建镜像，再执行 `ops/deploy.sh` 传输到 TARGET_HOST。
+- 生产部署文档与示例配置禁止写入可直接定位环境的真实主机名、域名和绝对路径；仓库内只保留占位符（如 `TARGET_HOST`/`APP_DOMAIN`/`DEPLOY_DIR`），真实值放在不入库的私有运维资料中。

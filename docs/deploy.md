@@ -4,12 +4,13 @@
 
 | 角色 | 主机 | 连接方式 | 用途 |
 |------|------|----------|------|
-| 构建机 | om | `ssh om` | 拉取代码、构建 Docker 镜像 |
-| 目标服务器 | seed (zppy.funnytop.club) | `ssh seed` | 运行生产服务 |
+| 构建机 | `BUILD_HOST` | `ssh ${BUILD_HOST}` | 拉取代码、构建 Docker 镜像 |
+| 目标服务器 | `TARGET_HOST` (`APP_DOMAIN`) | `ssh ${TARGET_HOST}` | 运行生产服务 |
 
 - 服务器架构：Linux amd64 (Debian 6.1)
-- 服务器镜像存放地址：`/root/images`
-- 服务器部署目录：`/root/zhihu_alpha`
+- 服务器镜像存放地址：`<IMAGE_STORE_DIR>`
+- 服务器部署目录：`<DEPLOY_DIR>`
+- 说明：仓库内仅保留占位符，真实主机别名/域名/路径请保存在私有运维文档或密码管理器中。
 
 ## 首次部署
 
@@ -17,8 +18,8 @@
 
 ```bash
 # 上传初始化脚本并执行
-scp ops/server-init.sh seed:/root/
-ssh seed 'bash /root/server-init.sh'
+scp ops/server-init.sh ${TARGET_HOST}:<REMOTE_ROOT_DIR>/
+ssh ${TARGET_HOST} 'bash <REMOTE_ROOT_DIR>/server-init.sh'
 ```
 
 脚本会安装 Nginx/Certbot/Docker，配置 SSL 证书、cron 定时任务。
@@ -29,16 +30,16 @@ ssh seed 'bash /root/server-init.sh'
 # 复制生产环境变量（编辑填入真实密钥后上传）
 cp .env.prod.example .env.prod
 # 编辑 .env.prod 填入真实值...
-scp .env.prod seed:/root/zhihu_alpha/
-scp docker-compose.prod.yml seed:/root/zhihu_alpha/
-scp -r ops/ seed:/root/zhihu_alpha/
+scp .env.prod ${TARGET_HOST}:<DEPLOY_DIR>/
+scp docker-compose.prod.yml ${TARGET_HOST}:<DEPLOY_DIR>/
+scp -r ops/ ${TARGET_HOST}:<DEPLOY_DIR>/
 ```
 
 ### 3. 在 om 机器构建并部署
 
 ```bash
-ssh om
-cd /home/ohos/code/hackthon_alpha
+ssh ${BUILD_HOST}
+cd <BUILD_WORKDIR>
 
 # 构建镜像（自动 git pull）
 ./ops/build.sh
@@ -50,8 +51,8 @@ cd /home/ohos/code/hackthon_alpha
 ## 日常迭代部署
 
 ```bash
-ssh om
-cd /home/ohos/code/hackthon_alpha
+ssh ${BUILD_HOST}
+cd <BUILD_WORKDIR>
 
 # 1. 构建新版本
 ./ops/build.sh
@@ -76,19 +77,19 @@ ls -lt images/zhihu_alpha_*.tar.gz
 ### 查看服务状态
 
 ```bash
-ssh seed 'cd /root/zhihu_alpha && docker compose -f docker-compose.prod.yml ps'
+ssh ${TARGET_HOST} 'cd <DEPLOY_DIR> && docker compose -f docker-compose.prod.yml ps'
 ```
 
 ### 查看日志
 
 ```bash
-ssh seed 'cd /root/zhihu_alpha && docker compose -f docker-compose.prod.yml logs -f --tail=100 backend'
+ssh ${TARGET_HOST} 'cd <DEPLOY_DIR> && docker compose -f docker-compose.prod.yml logs -f --tail=100 backend'
 ```
 
 ### 手动备份
 
 ```bash
-ssh seed '/root/zhihu_alpha/ops/backup.sh'
+ssh ${TARGET_HOST} '<DEPLOY_DIR>/ops/backup.sh'
 ```
 
 ### 自动任务（已通过 server-init.sh 配置）

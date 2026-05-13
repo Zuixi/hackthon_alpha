@@ -1,0 +1,13 @@
+title = "zhihu_alpha gitleaks config"
+
+[allowlist]
+description = "allow non-secret placeholders in templates/docs"
+paths = [
+  '''^docs/opt/''',
+]
+regexes = [
+  '''<APP_DOMAIN>''',
+  '''<DEPLOY_DIR>''',
+  '''<IMAGE_STORE_DIR>''',
+  '''<REMOTE_ROOT_DIR>''',
+]

@@ -1,5 +1,5 @@
 #!/bin/bash
-# 在 om 构建机上执行：拉取最新代码 -> 构建 amd64 镜像 -> 保存到 images/
+# 在构建机上执行：拉取最新代码 -> 构建 amd64 镜像 -> 保存到 images/
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

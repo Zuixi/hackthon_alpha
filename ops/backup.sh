@@ -1,6 +1,6 @@
 #!/bin/bash
-# 在 seed 服务器上执行：备份 PostgreSQL 数据库
-# Cron: 0 3 * * * /root/zhihu_alpha/ops/backup.sh >> /var/log/zhihu_backup.log 2>&1
+# 在目标服务器上执行：备份 PostgreSQL 数据库
+# Cron: 0 3 * * * <DEPLOY_DIR>/ops/backup.sh >> /var/log/zhihu_backup.log 2>&1
 set -euo pipefail
 
 BACKUP_DIR="/root/backups/zhihu_alpha"
