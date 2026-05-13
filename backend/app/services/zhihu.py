@@ -14,9 +14,11 @@ class ZhihuService:
         self.dev_base = settings.ZHIHU_DEV_BASE_URL
 
     def _dev_headers(self) -> dict:
+        import time as _time
         return {
             "Content-Type": "application/json",
-            "x-api-key": settings.ZHIHU_DEV_API_KEY,
+            "Authorization": f"Bearer {settings.ZHIHU_DEV_API_KEY}",
+            "X-Request-Timestamp": str(int(_time.time())),
         }
 
     def _oauth_headers(self, access_token: str = "") -> dict:
@@ -73,7 +75,7 @@ class ZhihuService:
     async def search_zhihu(self, query: str, limit: int = 10) -> dict:
         """Search Zhihu content to enrich AI context."""
         url = f"{self.dev_base}/api/v1/content/zhihu_search"
-        params = {"q": query, "limit": limit}
+        params = {"Query": query, "limit": limit}
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(url, headers=self._dev_headers(), params=params)
             resp.raise_for_status()
@@ -82,7 +84,7 @@ class ZhihuService:
     async def search_global(self, query: str, limit: int = 10) -> dict:
         """Search global web content."""
         url = f"{self.dev_base}/api/v1/content/global_search"
-        params = {"q": query, "limit": limit}
+        params = {"Query": query, "limit": limit}
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(url, headers=self._dev_headers(), params=params)
             resp.raise_for_status()

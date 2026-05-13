@@ -17,6 +17,7 @@ from app.schemas.chat import (
 )
 from app.services.minimax import minimax_service
 from app.services.zhihu import zhihu_service
+from app.agent.agent_loop import agent_chat_stream
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 logger = logging.getLogger(__name__)
@@ -162,11 +163,12 @@ async def send_message(
     async def event_stream():
         full_response: list[str] = []
         try:
-            async for event in minimax_service.chat_stream_blocks(
+            async for event in agent_chat_stream(
                 user_message=req.message,
                 history=history,
                 topic_title=topic_title,
                 search_context=search_context,
+                session_id=session_id,
             ):
                 event_type = event.get("type")
 
@@ -175,7 +177,6 @@ async def send_message(
                     if chunk:
                         full_response.append(chunk)
 
-                # Forward all normalized stream blocks to frontend.
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         except Exception as e:
             logger.error(f"Streaming error: {e}")

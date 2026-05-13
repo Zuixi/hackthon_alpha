@@ -8,7 +8,7 @@ export function AuthCallback() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const code = searchParams.get('code')
+    const code = searchParams.get('code') || searchParams.get('authorization_code')
     if (!code) {
       setError('No authorization code received')
       return

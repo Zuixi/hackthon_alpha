@@ -152,6 +152,34 @@ export function ChatSessionPage() {
             return
           }
 
+          if (type === 'tool_call') {
+            const id = parsed.id || `tool-${Date.now()}`
+            const item: StreamToolUse = {
+              id,
+              name: parsed.name || 'tool',
+              input: parsed.input
+                ? typeof parsed.input === 'string'
+                  ? parsed.input
+                  : JSON.stringify(parsed.input, null, 2)
+                : '',
+            }
+            toolMap.set(id, item)
+            setStreamingToolUses(Array.from(toolMap.values()))
+            return
+          }
+
+          if (type === 'tool_result') {
+            const id = `result-${Date.now()}`
+            const item: StreamToolUse = {
+              id,
+              name: `✅ ${parsed.name || 'tool'} 结果`,
+              input: parsed.result_preview || '',
+            }
+            toolMap.set(id, item)
+            setStreamingToolUses(Array.from(toolMap.values()))
+            return
+          }
+
           if (type === 'error') {
             toast.error(parsed.message || '流式响应异常')
           }

@@ -27,10 +27,12 @@ class Settings(BaseSettings):
 
     # Zhihu Developer API  (developer.zhihu.com)
     ZHIHU_DEV_API_KEY: str = ""
-    ZHIHU_DEV_BASE_URL: str = "https://api.zhihu.com"
+    ZHIHU_DEV_BASE_URL: str = "https://developer.zhihu.com"
 
     # Zhihu Community / Circle API  (openapi under zhihu.com)
     ZHIHU_COMMUNITY_BASE_URL: str = "https://openapi.zhihu.com"
+    ZHIHU_COMMUNITY_APP_KEY: str = ""
+    ZHIHU_COMMUNITY_APP_SECRET: str = ""
 
     # JWT
     JWT_SECRET: str = "dev-secret-change-in-production"
@@ -39,6 +41,45 @@ class Settings(BaseSettings):
 
     # CORS
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:8000"
+
+    # Agent
+    AGENT_DATA_DIR: str = "./data"
+    AGENT_MAX_ITERATIONS: int = 8
+
+    # Multi-Provider (override to switch from MiniMax)
+    LLM_PROVIDER: str = "minimax"
+    LLM_API_KEY: str = ""
+    LLM_MODEL: str = ""
+    LLM_BASE_URL: str = ""
+
+    # MCP
+    MCP_SERVERS_CONFIG: str = ""
+
+    # Skill Engine
+    SKILL_AUTO_EXTRACT: bool = True
+    SKILL_SIMILARITY_THRESHOLD: float = 0.7
+
+    # Memory System
+    MEMORY_AUTO_REVIEW: bool = True
+    MEMORY_NUDGE_INTERVAL: int = 8
+    MEMORY_CHAR_LIMIT: int = 2200
+    USER_CHAR_LIMIT: int = 1375
+
+    # Error Recovery
+    MAX_EMPTY_RETRIES: int = 3
+    MAX_STREAM_RETRIES: int = 2
+
+    # Tool Result Management
+    TOOL_RESULT_INLINE_LIMIT: int = 3000
+    TOOL_RESULT_PERSIST_THRESHOLD: int = 8000
+    TURN_TOTAL_BUDGET: int = 15000
+
+    # Guardrails
+    TOOL_MAX_REPEAT: int = 3
+    TOOL_MAX_CONSECUTIVE_ERRORS: int = 5
+
+    # Parallel Tool Execution
+    PARALLEL_TOOL_ENABLED: bool = True
 
     # Development
     BYPASS_OAUTH_LOGIN: bool = False
