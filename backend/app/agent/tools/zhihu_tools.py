@@ -1,12 +1,14 @@
 """Zhihu API tools — registered via ToolRegistry.
 
-Wraps all 11 Zhihu API functions from app.services.zhihu_tools and registers
-them into the agent tool registry with proper schemas.
+Wraps all Zhihu API functions from app.services.zhihu_tools and registers
+them into the agent tool registry with proper schemas, including the
+multiplatform hot topic tools.
 """
 
 from app.agent.tools.registry import registry
 from app.services.zhihu_tools import (
     TOOL_DEFINITIONS,
+    MULTIPLATFORM_TOOL_DEFINITIONS,
     zhihu_hot_list,
     zhihu_search,
     zhihu_global_search,
@@ -18,6 +20,8 @@ from app.services.zhihu_tools import (
     zhihu_get_comments,
     zhihu_story_list,
     zhihu_story_detail,
+    hot_topics_multiplatform,
+    hot_topics_grouped,
 )
 
 _HANDLERS = {
@@ -32,12 +36,15 @@ _HANDLERS = {
     "zhihu_get_comments": lambda args: zhihu_get_comments(**args),
     "zhihu_story_list": lambda args: zhihu_story_list(**args),
     "zhihu_story_detail": lambda args: zhihu_story_detail(**args),
+    "hot_topics_multiplatform": lambda args: hot_topics_multiplatform(**args),
+    "hot_topics_grouped": lambda args: hot_topics_grouped(**args),
 }
 
 
 def register_zhihu_tools() -> None:
     """Register all Zhihu API tools into the global registry."""
-    for tool_def in TOOL_DEFINITIONS:
+    all_defs = TOOL_DEFINITIONS + MULTIPLATFORM_TOOL_DEFINITIONS
+    for tool_def in all_defs:
         name = tool_def["name"]
         handler = _HANDLERS.get(name)
         if handler is None:

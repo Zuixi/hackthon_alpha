@@ -32,5 +32,7 @@ images/
 # Production env (secrets)
 .env.prod
 
-.env
+# Runtime data (sessions, memories, tool outputs)
+backend/data/
 
+.env

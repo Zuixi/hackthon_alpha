@@ -168,6 +168,8 @@ async def send_message(
                 topic_title=topic_title,
                 search_context=search_context,
                 session_id=session_id,
+                user_id=user.id,
+                zhihu_token=user.zhihu_token or "",
             ):
                 event_type = event.get("type")
 

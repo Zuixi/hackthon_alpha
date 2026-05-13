@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Send, Lightbulb, Copy, Upload } from 'lucide-react'
@@ -26,12 +26,41 @@ export function ChatSessionPage() {
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
+  const [displayedContent, setDisplayedContent] = useState('')
   const [streamingThinking, setStreamingThinking] = useState('')
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false)
   const [streamingToolUses, setStreamingToolUses] = useState<StreamToolUse[]>([])
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const typewriterRef = useRef<number | null>(null)
+  const displayedLenRef = useRef(0)
+
+  useEffect(() => {
+    if (!isStreaming) {
+      if (typewriterRef.current) cancelAnimationFrame(typewriterRef.current)
+      displayedLenRef.current = 0
+      setDisplayedContent('')
+      return
+    }
+
+    const tick = () => {
+      const target = streamingContent
+      const current = displayedLenRef.current
+      if (current < target.length) {
+        const gap = target.length - current
+        const step = gap > 60 ? Math.ceil(gap / 8) : gap > 20 ? 3 : 1
+        displayedLenRef.current = Math.min(current + step, target.length)
+        setDisplayedContent(target.slice(0, displayedLenRef.current))
+      }
+      typewriterRef.current = requestAnimationFrame(tick)
+    }
+
+    typewriterRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (typewriterRef.current) cancelAnimationFrame(typewriterRef.current)
+    }
+  }, [isStreaming, streamingContent])
 
   const { data: session } = useQuery({
     queryKey: ['chat-session', sessionId],
@@ -51,7 +80,7 @@ export function ChatSessionPage() {
     }
   }, [])
 
-  useEffect(scrollToBottom, [localMessages, streamingContent, scrollToBottom])
+  useEffect(scrollToBottom, [localMessages, displayedContent, scrollToBottom])
 
   const handleSend = async () => {
     const message = input.trim()
@@ -148,6 +177,36 @@ export function ChatSessionPage() {
                   : JSON.stringify(parsed.input, null, 2)
             }
             toolMap.set(id, existing)
+            setStreamingToolUses(Array.from(toolMap.values()))
+            return
+          }
+
+          if (type === 'tool_call') {
+            const id = parsed.id || `tc-${Date.now()}`
+            const item: StreamToolUse = {
+              id,
+              name: parsed.name || 'tool',
+              input: parsed.input
+                ? (typeof parsed.input === 'string'
+                    ? parsed.input
+                    : JSON.stringify(parsed.input, null, 2))
+                : '',
+            }
+            toolMap.set(id, item)
+            setStreamingToolUses(Array.from(toolMap.values()))
+            return
+          }
+
+          if (type === 'tool_result') {
+            const name = parsed.name || ''
+            const preview = parsed.result_preview || ''
+            const id = `tr-${name}-${Date.now()}`
+            const item: StreamToolUse = {
+              id,
+              name: `${name} ✓`,
+              input: preview,
+            }
+            toolMap.set(id, item)
             setStreamingToolUses(Array.from(toolMap.values()))
             return
           }
@@ -270,7 +329,7 @@ export function ChatSessionPage() {
             />
           ))}
 
-          {isStreaming && (streamingThinking || streamingToolUses.length > 0 || streamingContent) && (
+          {isStreaming && (streamingThinking || streamingToolUses.length > 0 || displayedContent) && (
             <div className="flex gap-3">
               <Avatar className="h-8 w-8 flex-shrink-0">
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">AI</AvatarFallback>
@@ -312,7 +371,7 @@ export function ChatSessionPage() {
                   </div>
                 )}
                 <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown>{streamingContent}</ReactMarkdown>
+                  <ReactMarkdown>{displayedContent}</ReactMarkdown>
                 </div>
                 <div className="mt-1">
                   <span className="inline-block w-2 h-4 bg-primary animate-pulse rounded-sm" />
