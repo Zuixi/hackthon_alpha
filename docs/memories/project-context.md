@@ -34,5 +34,8 @@ SUMMARIZE global project status/system environment/user preferences/etc BY USING
 - 服务器端可直接使用仓库根目录 `deploy.sh` 一键发布：脚本固定从 `/root/code/hackthon_alpha` 构建镜像并在 `/root/zhihu_alpha` 启动容器，含健康检查重试。
 - 生产故障排查建议统一走 `debugging-production-zhihu-alpha` 技能：先在 `/root/zhihu_alpha` 采集 compose 状态与多容器日志证据，再进行根因分类与修复后回归，避免“先重启后取证”导致证据丢失。
 
+- 灵感卡片已从"备忘录"升级为"沉浸式灵感工作台"：情感化空状态、右侧 Sheet 侧滑创建面板（Markdown 工具栏+AI 标签推荐 Mock+彩色标签+关联内容）、卡片网格/列表双视图（色条+标题+摘要+标签）、详情弹窗（Markdown 渲染+"基于灵感创作"跳转）。
+- `IdeaCard` 模型新增 nullable `title` 字段（迁移 `d6e7f8a9b0c1`），后端搜索同时匹配 title 和 content；前端无 title 时回退到内容首行摘要。
+
 ## USER PROFILES
 

@@ -28,7 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deployed
 
-- 版本 `20260514_140044` 部署至生产环境，镜像归档于 `/root/images/zhihu_alpha_20260514_140044.tar.gz`（157M）
+- 版本 `20260514_144842` 部署至生产环境，镜像归档于 `/root/images/zhihu_alpha_20260514_144842.tar.gz`（157M）
+- Alembic 迁移 `d6e7f8a9b0c1`（add idea card title field）自动执行成功
 - 健康检查通过：`GET /api/health → {"status":"ok"}`
 
 ## [20260514_105827] - 2026-05-14
