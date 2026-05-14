@@ -23,7 +23,8 @@ _SELF_REF_RE = re.compile(
 MEMORY_SCHEMA = {
     "name": "memory",
     "description": (
-        "Save durable information to persistent memory that survives across sessions. "
+        "Save durable information to persistent memory that survives across sessions (write operation). "
+        "You MUST call this tool to actually persist information — merely stating 'I will remember' in text does NOT save anything. "
         "Memory is injected into future sessions, so keep it compact.\n\n"
         "WHEN TO SAVE (proactively):\n"
         "- User corrects you or says 'remember this'\n"

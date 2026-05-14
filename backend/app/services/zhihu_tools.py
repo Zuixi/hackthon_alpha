@@ -167,7 +167,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     },
     {
         "name": "zhihu_publish_pin",
-        "description": "在知乎圈子中发布一条想法。用户确认后才能调用。每小时最多5条。",
+        "description": "在知乎圈子中发布一条想法（写入操作）。必须调用此工具才能真正发布，仅在文字中描述'已发布'不会实际发布任何内容。用户确认后才能调用。每小时最多5条。",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -190,7 +190,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     },
     {
         "name": "zhihu_create_comment",
-        "description": "在知乎圈子的想法下创建评论或回复。每小时每个想法下最多20条。",
+        "description": "在知乎圈子的想法下创建评论或回复（写入操作）。必须调用此工具才能真正发表评论，仅在文字中回复'已评论'不会实际发表。每小时每个想法下最多20条。",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -213,7 +213,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     },
     {
         "name": "zhihu_reaction",
-        "description": "对知乎圈子中的想法或评论进行点赞/取消点赞。",
+        "description": "对知乎圈子中的想法或评论进行点赞/取消点赞（写入操作）。必须调用此工具才能真正执行点赞。",
         "input_schema": {
             "type": "object",
             "properties": {

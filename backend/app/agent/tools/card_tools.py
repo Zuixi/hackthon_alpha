@@ -19,8 +19,9 @@ CARD_TOOL_DEFINITIONS = [
     {
         "name": "create_idea_card",
         "description": (
-            "保存一条灵感卡片。当用户在对话中产生了有价值的创作洞察、选题灵感或观点时，"
-            "使用此工具将其保存为灵感卡片，方便日后回顾。需要用户确认后再保存。"
+            "保存一条灵感卡片到数据库。当用户要求保存灵感或卡片时，你必须调用此工具来执行实际保存操作。"
+            "仅在文字中描述'已保存'是无效的，必须通过此工具调用才能真正将卡片写入数据库。"
+            "调用成功后会返回 card_id 作为保存成功的凭证。"
         ),
         "input_schema": {
             "type": "object",
@@ -71,7 +72,7 @@ CARD_TOOL_DEFINITIONS = [
     },
     {
         "name": "delete_idea_card",
-        "description": "删除一条灵感卡片。需要提供卡片ID。",
+        "description": "从数据库中删除一条灵感卡片。必须调用此工具才能真正执行删除，仅在文字中回复'已删除'不会生效。需要提供卡片ID。",
         "input_schema": {
             "type": "object",
             "properties": {
