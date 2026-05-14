@@ -14,6 +14,7 @@ from app.schemas.chat import (
     MessageResponse,
     ChatRequest,
     CreateSessionRequest,
+    UpdateSessionRequest,
 )
 from app.services.zhihu import zhihu_service
 from app.agent.agent_loop import agent_chat_stream
@@ -97,6 +98,34 @@ async def get_session(
         messages=[MessageResponse.model_validate(m) for m in session.messages],
         created_at=session.created_at,
         updated_at=session.updated_at,
+    )
+
+
+@router.patch("/{session_id}", response_model=ChatSessionResponse)
+async def update_session(
+    session_id: str,
+    req: UpdateSessionRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    session = (
+        db.query(ChatSession)
+        .filter(ChatSession.id == session_id, ChatSession.user_id == user.id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    session.title = req.title.strip() or session.title
+    db.commit()
+    db.refresh(session)
+    return ChatSessionResponse(
+        id=session.id,
+        title=session.title,
+        hot_topic_id=session.hot_topic_id,
+        hot_topic_title=session.hot_topic.title if session.hot_topic else None,
+        created_at=session.created_at,
+        updated_at=session.updated_at,
+        message_count=len(session.messages),
     )
 
 

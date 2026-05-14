@@ -76,6 +76,11 @@ export const api = {
       request<import('@/types/api').ChatSessionDetail>(`/api/chat/${id}`),
     deleteSession: (id: string) =>
       request<{ ok: boolean }>(`/api/chat/${id}`, { method: 'DELETE' }),
+    renameSession: (id: string, title: string) =>
+      request<import('@/types/api').ChatSession>(`/api/chat/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ title }),
+      }),
     sendMessage: (sessionId: string, message: string) => {
       const token = getToken()
       return fetch(`${API_BASE}/api/chat/${sessionId}/message`, {

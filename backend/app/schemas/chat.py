@@ -45,3 +45,7 @@ class ChatRequest(BaseModel):
 class CreateSessionRequest(BaseModel):
     hot_topic_id: Optional[str] = None
     title: Optional[str] = None
+
+
+class UpdateSessionRequest(BaseModel):
+    title: str

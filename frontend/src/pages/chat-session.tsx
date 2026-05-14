@@ -1,22 +1,24 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Send, Lightbulb, Copy, Upload } from 'lucide-react'
+import { ArrowLeft, Send, Lightbulb, Copy, Upload, ChevronDown, ChevronRight, Brain } from 'lucide-react'
 import { toast } from 'sonner'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { api } from '@/lib/api'
 import { useAuth } from '@/hooks/use-auth'
 import type { ChatMessage } from '@/types/api'
 
-type StreamToolUse = {
-  id: string
-  name: string
-  input: string
-}
+type ProcessEntry =
+  | { kind: 'thinking'; content: string }
+  | { kind: 'tool_call'; name: string; input: string }
+  | { kind: 'tool_result'; name: string; preview: string }
+  | { kind: 'intermediate_text'; content: string }
+
+const remarkPlugins = [remarkGfm]
 
 export function ChatSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -28,13 +30,15 @@ export function ChatSessionPage() {
   const [streamingContent, setStreamingContent] = useState('')
   const [displayedContent, setDisplayedContent] = useState('')
   const [streamingThinking, setStreamingThinking] = useState('')
-  const [isThinkingExpanded, setIsThinkingExpanded] = useState(false)
-  const [streamingToolUses, setStreamingToolUses] = useState<StreamToolUse[]>([])
+  const [processLog, setProcessLog] = useState<ProcessEntry[]>([])
+  const [isProcessExpanded, setIsProcessExpanded] = useState(false)
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const typewriterRef = useRef<number | null>(null)
   const displayedLenRef = useRef(0)
+  const userScrolledAwayRef = useRef(false)
+  const bottomSentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!isStreaming) {
@@ -62,6 +66,13 @@ export function ChatSessionPage() {
     }
   }, [isStreaming, streamingContent])
 
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    userScrolledAwayRef.current = distanceFromBottom > 80
+  }, [])
+
   const { data: session } = useQuery({
     queryKey: ['chat-session', sessionId],
     queryFn: () => api.chat.getSession(sessionId!),
@@ -75,12 +86,15 @@ export function ChatSessionPage() {
   }, [session?.messages])
 
   const scrollToBottom = useCallback(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+    if (userScrolledAwayRef.current) return
+    bottomSentinelRef.current?.scrollIntoView({ behavior: 'instant' })
   }, [])
 
   useEffect(scrollToBottom, [localMessages, displayedContent, scrollToBottom])
+
+  useEffect(() => {
+    userScrolledAwayRef.current = false
+  }, [localMessages.length])
 
   const handleSend = async () => {
     const message = input.trim()
@@ -90,8 +104,8 @@ export function ChatSessionPage() {
     setIsStreaming(true)
     setStreamingContent('')
     setStreamingThinking('')
-    setIsThinkingExpanded(false)
-    setStreamingToolUses([])
+    setProcessLog([])
+    setIsProcessExpanded(false)
 
     const userMsg: ChatMessage = {
       id: `temp-${Date.now()}`,
@@ -108,9 +122,29 @@ export function ChatSessionPage() {
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let accumulated = ''
-      let accumulatedThinking = ''
+      let accThinking = ''
       let buffer = ''
-      const toolMap = new Map<string, StreamToolUse>()
+      const log: ProcessEntry[] = []
+      let hasToolCalls = false
+
+      const flushTextToProcess = () => {
+        if (accumulated.trim()) {
+          log.push({ kind: 'intermediate_text', content: accumulated.trim() })
+          setProcessLog([...log])
+        }
+        accumulated = ''
+        setStreamingContent('')
+        displayedLenRef.current = 0
+      }
+
+      const flushThinkingToProcess = () => {
+        if (accThinking.trim()) {
+          log.push({ kind: 'thinking', content: accThinking.trim() })
+          setProcessLog([...log])
+        }
+        accThinking = ''
+        setStreamingThinking('')
+      }
 
       const parseEvent = (rawEvent: string) => {
         const lines = rawEvent.split('\n')
@@ -125,7 +159,6 @@ export function ChatSessionPage() {
           const parsed = JSON.parse(data)
           const type = parsed.type as string | undefined
 
-          // Backward compatibility with old backend payload shape.
           if (!type && parsed.content) {
             accumulated += parsed.content
             setStreamingContent(accumulated)
@@ -139,75 +172,37 @@ export function ChatSessionPage() {
           }
 
           if (type === 'thinking_delta' && parsed.content) {
-            accumulatedThinking += parsed.content
-            setStreamingThinking(accumulatedThinking)
+            accThinking += parsed.content
+            setStreamingThinking(accThinking)
             return
           }
 
-          if (type === 'tool_use_start') {
-            const id = parsed.id || `tool-${Date.now()}`
-            const item: StreamToolUse = { id, name: parsed.name || 'tool', input: '' }
-            toolMap.set(id, item)
-            setStreamingToolUses(Array.from(toolMap.values()))
-            return
-          }
+          if (type === 'tool_use_start' || type === 'tool_call' || type === 'tool_use') {
+            flushThinkingToProcess()
+            flushTextToProcess()
+            hasToolCalls = true
 
-          if (type === 'tool_use_delta' && parsed.id) {
-            const existing = toolMap.get(parsed.id)
-            if (existing && parsed.content) {
-              existing.input += String(parsed.content)
-              toolMap.set(parsed.id, existing)
-              setStreamingToolUses(Array.from(toolMap.values()))
-            }
-            return
-          }
-
-          if (type === 'tool_use') {
-            const id = parsed.id || `tool-${Date.now()}`
-            const existing = toolMap.get(id) || {
-              id,
-              name: parsed.name || 'tool',
-              input: '',
-            }
-            existing.name = parsed.name || existing.name
+            const name = parsed.name || 'tool'
+            let inp = ''
             if (parsed.input !== undefined) {
-              existing.input =
-                typeof parsed.input === 'string'
-                  ? parsed.input
-                  : JSON.stringify(parsed.input, null, 2)
+              inp = typeof parsed.input === 'string'
+                ? parsed.input
+                : JSON.stringify(parsed.input, null, 2)
             }
-            toolMap.set(id, existing)
-            setStreamingToolUses(Array.from(toolMap.values()))
+            log.push({ kind: 'tool_call', name, input: inp })
+            setProcessLog([...log])
             return
           }
 
-          if (type === 'tool_call') {
-            const id = parsed.id || `tc-${Date.now()}`
-            const item: StreamToolUse = {
-              id,
-              name: parsed.name || 'tool',
-              input: parsed.input
-                ? (typeof parsed.input === 'string'
-                    ? parsed.input
-                    : JSON.stringify(parsed.input, null, 2))
-                : '',
-            }
-            toolMap.set(id, item)
-            setStreamingToolUses(Array.from(toolMap.values()))
+          if (type === 'tool_use_delta' || type === 'tool_use_end') {
             return
           }
 
           if (type === 'tool_result') {
             const name = parsed.name || ''
             const preview = parsed.result_preview || ''
-            const id = `tr-${name}-${Date.now()}`
-            const item: StreamToolUse = {
-              id,
-              name: `${name} ✓`,
-              input: preview,
-            }
-            toolMap.set(id, item)
-            setStreamingToolUses(Array.from(toolMap.values()))
+            log.push({ kind: 'tool_result', name, preview })
+            setProcessLog([...log])
             return
           }
 
@@ -238,11 +233,25 @@ export function ChatSessionPage() {
         parseEvent(buffer)
       }
 
+      flushThinkingToProcess()
+
       if (accumulated) {
         const assistantMsg: ChatMessage = {
           id: `temp-assistant-${Date.now()}`,
           role: 'assistant',
           content: accumulated,
+          created_at: new Date().toISOString(),
+        }
+        setLocalMessages((prev) => [...prev, assistantMsg])
+      } else if (hasToolCalls) {
+        const lastTexts = log.filter(e => e.kind === 'intermediate_text')
+        const fallbackContent = lastTexts.length > 0
+          ? (lastTexts[lastTexts.length - 1] as { content: string }).content
+          : '[AI 已完成处理]'
+        const assistantMsg: ChatMessage = {
+          id: `temp-assistant-${Date.now()}`,
+          role: 'assistant',
+          content: fallbackContent,
           created_at: new Date().toISOString(),
         }
         setLocalMessages((prev) => [...prev, assistantMsg])
@@ -253,7 +262,7 @@ export function ChatSessionPage() {
       setIsStreaming(false)
       setStreamingContent('')
       setStreamingThinking('')
-      setStreamingToolUses([])
+      setProcessLog([])
       queryClient.invalidateQueries({ queryKey: ['chat-session', sessionId] })
       queryClient.invalidateQueries({ queryKey: ['chat-sessions'] })
     }
@@ -294,9 +303,12 @@ export function ChatSessionPage() {
 
   const allMessages = localMessages
 
+  const hasProcess = processLog.length > 0 || !!streamingThinking
+  const toolCallCount = processLog.filter(e => e.kind === 'tool_call').length
+
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-background">
+      <div className="flex items-center gap-3 px-4 py-3 border-b bg-background flex-shrink-0">
         <Button variant="ghost" size="icon" onClick={() => navigate('/chat')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -310,7 +322,11 @@ export function ChatSessionPage() {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 min-h-0 overflow-y-auto p-4"
+      >
         <div className="max-w-3xl mx-auto space-y-6">
           {allMessages.length === 0 && !isStreaming && (
             <div className="text-center py-12 text-muted-foreground">
@@ -329,67 +345,76 @@ export function ChatSessionPage() {
             />
           ))}
 
-          {isStreaming && (streamingThinking || streamingToolUses.length > 0 || displayedContent) && (
+          {isStreaming && (hasProcess || displayedContent) && (
             <div className="flex gap-3">
               <Avatar className="h-8 w-8 flex-shrink-0">
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">AI</AvatarFallback>
               </Avatar>
               <div className="flex-1 bg-muted rounded-2xl rounded-tl-none px-4 py-3">
-                {!!streamingThinking && (
-                  <div className="mb-3 rounded-md border bg-background/70 px-3 py-2">
-                    <div className="mb-1 flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-medium text-muted-foreground">Thinking</p>
-                      <button
-                        type="button"
-                        className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                        onClick={() => setIsThinkingExpanded((prev) => !prev)}
-                      >
-                        {isThinkingExpanded ? '收起' : '展开'}
-                      </button>
-                    </div>
-                    {isThinkingExpanded ? (
-                      <p className="text-xs whitespace-pre-wrap text-muted-foreground">{streamingThinking}</p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">思考过程已折叠，点击“展开”查看。</p>
+                {hasProcess && (
+                  <div className="mb-3 rounded-md border bg-background/70 overflow-hidden">
+                    <button
+                      type="button"
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors"
+                      onClick={() => setIsProcessExpanded((prev) => !prev)}
+                    >
+                      {isProcessExpanded
+                        ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                        : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      }
+                      <Brain className="h-3.5 w-3.5 text-primary/70" />
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        思考过程
+                        {toolCallCount > 0 ? (
+                          <span className="ml-1.5 text-primary/60">
+                            · 已调用 {toolCallCount} 个工具
+                          </span>
+                        ) : streamingThinking ? (
+                          <span className="ml-1.5 text-primary/60 animate-pulse">
+                            · 思考中...
+                          </span>
+                        ) : null}
+                      </span>
+                    </button>
+                    {isProcessExpanded && (
+                      <div className="border-t px-3 py-2 space-y-2 max-h-[300px] overflow-y-auto">
+                        {processLog.map((entry, i) => (
+                          <ProcessEntryView key={i} entry={entry} />
+                        ))}
+                        {streamingThinking && (
+                          <p className="text-xs whitespace-pre-wrap text-muted-foreground leading-relaxed">
+                            {streamingThinking}
+                            <span className="inline-block w-1.5 h-3 bg-primary/50 animate-pulse rounded-sm ml-0.5 align-middle" />
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
-                {streamingToolUses.length > 0 && (
-                  <div className="mb-3 space-y-2">
-                    {streamingToolUses.map((tool) => (
-                      <div key={tool.id} className="rounded-md border bg-background/70 px-3 py-2">
-                        <p className="text-[11px] font-medium text-muted-foreground">
-                          Tool: {tool.name}
-                        </p>
-                        {tool.input && (
-                          <pre className="mt-1 text-xs whitespace-pre-wrap break-words text-muted-foreground">
-                            {tool.input}
-                          </pre>
-                        )}
-                      </div>
-                    ))}
+                {displayedContent && (
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown remarkPlugins={remarkPlugins}>{displayedContent}</ReactMarkdown>
                   </div>
                 )}
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown>{displayedContent}</ReactMarkdown>
-                </div>
                 <div className="mt-1">
                   <span className="inline-block w-2 h-4 bg-primary animate-pulse rounded-sm" />
                 </div>
               </div>
             </div>
           )}
-        </div>
-      </ScrollArea>
 
-      <div className="border-t p-4 bg-background">
+          <div ref={bottomSentinelRef} className="h-1" />
+        </div>
+      </div>
+
+      <div className="flex-shrink-0 border-t p-4 bg-background">
         <div className="max-w-3xl mx-auto flex gap-2">
           <Textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="输入你的想法... (Enter 发送, Shift+Enter 换行)"
+            placeholder={'输入你的想法... (Enter 发送, Shift+Enter 换行)'}
             className="min-h-[44px] max-h-[120px] resize-none"
             rows={1}
             disabled={isStreaming}
@@ -406,6 +431,50 @@ export function ChatSessionPage() {
       </div>
     </div>
   )
+}
+
+function ProcessEntryView({ entry }: { entry: ProcessEntry }) {
+  if (entry.kind === 'thinking') {
+    return (
+      <p className="text-xs whitespace-pre-wrap text-muted-foreground leading-relaxed">
+        {entry.content}
+      </p>
+    )
+  }
+  if (entry.kind === 'tool_call') {
+    return (
+      <div className="flex items-start gap-1.5">
+        <span className="text-[11px] font-mono text-primary/70 whitespace-nowrap mt-0.5">
+          {'▶'} {entry.name}
+        </span>
+        {entry.input && (
+          <pre className="text-[10px] text-muted-foreground/70 truncate flex-1">{entry.input}</pre>
+        )}
+      </div>
+    )
+  }
+  if (entry.kind === 'tool_result') {
+    return (
+      <div className="flex items-start gap-1.5">
+        <span className="text-[11px] font-mono text-green-600/70 whitespace-nowrap mt-0.5">
+          {'✓'} {entry.name}
+        </span>
+        {entry.preview && (
+          <pre className="text-[10px] text-muted-foreground/60 truncate flex-1">
+            {entry.preview.length > 100 ? entry.preview.slice(0, 100) + '...' : entry.preview}
+          </pre>
+        )}
+      </div>
+    )
+  }
+  if (entry.kind === 'intermediate_text') {
+    return (
+      <p className="text-xs text-muted-foreground/80 italic border-l-2 border-primary/20 pl-2">
+        {entry.content}
+      </p>
+    )
+  }
+  return null
 }
 
 function MessageBubble({
@@ -440,7 +509,7 @@ function MessageBubble({
             <p className="text-sm whitespace-pre-wrap">{message.content}</p>
           ) : (
             <div className="prose prose-sm max-w-none dark:prose-invert">
-              <ReactMarkdown>{message.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={remarkPlugins}>{message.content}</ReactMarkdown>
             </div>
           )}
         </div>
@@ -453,7 +522,7 @@ function MessageBubble({
               onClick={() => onSaveCard(message.content)}
             >
               <Lightbulb className="h-3 w-3 mr-1" />
-              保存灵感
+              {'保存灵感'}
             </Button>
             <Button
               variant="ghost"
@@ -462,7 +531,7 @@ function MessageBubble({
               onClick={() => onPublish(message.content)}
             >
               <Upload className="h-3 w-3 mr-1" />
-              发布知乎
+              {'发布知乎'}
             </Button>
             <Button
               variant="ghost"
@@ -471,7 +540,7 @@ function MessageBubble({
               onClick={() => { navigator.clipboard.writeText(message.content); toast.success('已复制') }}
             >
               <Copy className="h-3 w-3 mr-1" />
-              复制
+              {'复制'}
             </Button>
           </div>
         )}
