@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func as sa_func
+from sqlalchemy import case, func as sa_func
 from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
@@ -21,7 +21,7 @@ from app.schemas.hot import (
     ZhihuSourceStatusResponse,
 )
 from app.services.cache import cache_get, cache_set
-from app.services.newsnow_fetcher import PLATFORM_NAMES
+from app.services.newsnow_fetcher import PLATFORM_NAMES, PLATFORM_REGISTRY
 from app.services.keyword_filter import (
     get_keyword_rules,
     group_topics_by_keywords,
@@ -33,6 +33,10 @@ logger = logging.getLogger(__name__)
 CACHE_KEY = "hot:latest"
 CACHE_TTL_SECONDS = 300
 DATA_RETENTION_DAYS = 5
+
+_PLATFORM_ORDER = {
+    p["platform_key"]: idx for idx, p in enumerate(PLATFORM_REGISTRY)
+}
 
 
 def _enrich_platform_name(topic_resp: dict) -> dict:
@@ -86,7 +90,12 @@ async def get_hot_topics(
     if platforms:
         query = query.filter(HotTopic.platform.in_(platforms))
 
-    db_topics = query.order_by(HotTopic.platform, HotTopic.hot_score.desc()).limit(limit).all()
+    platform_sort = case(
+        _PLATFORM_ORDER,
+        value=HotTopic.platform,
+        else_=len(_PLATFORM_ORDER),
+    )
+    db_topics = query.order_by(platform_sort, HotTopic.hot_score.desc()).limit(limit).all()
 
     result = [_enrich_platform_name(HotTopicResponse.model_validate(t).model_dump()) for t in db_topics]
     cache_set(cache_key, result, CACHE_TTL_SECONDS)

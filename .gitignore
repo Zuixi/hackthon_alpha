@@ -28,6 +28,7 @@ postgres_data/
 
 # Docker images (built by ops/build.sh)
 images/
+!docs/images
 
 # Production env (secrets)
 .env.prod
@@ -36,5 +37,6 @@ images/
 backend/data/
 docs/opt/
 .cursor/skills/deploying-zhihu-alpha
-
+.cursor/skills/debugging-production-zhihu-alpha
+deploy.sh
 .env

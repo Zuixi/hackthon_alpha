@@ -1,15 +1,16 @@
-# 创作者助手 - 产品需求文档 (PRD)
+# AlphaBot 创作者助手 - 产品需求文档 (PRD)
 
 **版本**: v1.0  
 **日期**: 2026-05-11  
-**作者**: 黑客松参赛团队  
+**作者**: AC不AK 参赛团队  
 
 ---
 
 ## 1. 产品概述
 
 ### 1.1 产品定位
-为知乎创作者提供的一站式内容创作辅助平台，帮助创作者发现热点、激发灵感、沉淀思考、分析数据。
+为创作者提供的一站式内容创作辅助平台，帮助创作者发现热点、激发灵感、沉淀思考、分析数据。
+> 我们鼓励和AI深入对话，深度思考，不鼓励让AI直接输出，用户当作傀儡。
 
 ### 1.2 核心价值主张
 - **热点发现**: 聚合多平台24小时热点，让创作者不错过任何话题机会
@@ -83,11 +84,10 @@
   - 复制对话内容
 
 #### 2.3.3 AI模型配置
-- **使用模型**: MiniMax API
+- **使用模型**: Zhihu Agent Or Other LLM Provider
 - **参数设置**:
   - Temperature: 0.7（平衡创造性和一致性）
   - Max Tokens: 2000
-  - Model: MiniMax-Text-01
 
 ### 2.4 灵感卡片
 
@@ -153,133 +153,5 @@
 - **搜索**: 支持标题搜索
 
 ---
-
-## 3. 技术架构
-
-### 3.1 技术栈
-
-| 层级 | 技术 | 说明 |
-|------|------|------|
-| 前端 | Next.js 14 (App Router) | React服务端组件，SEO友好 |
-| UI组件 | shadcn/ui + Tailwind CSS | 现代化组件库，快速开发 |
-| 状态管理 | React Hooks + Context | 轻量级状态管理 |
-| 数据获取 | SWR | 缓存和重新验证 |
-| 可视化 | Recharts | React图表库 |
-| **后端** | **FastAPI (Python)** | **高性能异步Python框架** |
-| **数据库** | **PostgreSQL** | **关系型数据库** |
-| **ORM** | **SQLAlchemy** | **Python ORM** |
-| **迁移** | **Alembic** | **数据库迁移工具** |
-| **认证** | **JWT + OAuth** | **知乎OAuth集成** |
-| **AI服务** | **MiniMax API** | **对话生成** |
-| **爬虫** | **Playwright + APScheduler** | **定时抓取热点** |
-| **部署** | **Docker + Docker Compose** | **容器化部署** |
-
-### 3.2 系统架构图
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Web Frontend (Next.js)                   │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │  热点广场    │  │  创作对话    │  │  灵感卡片  │ 数据中心 │  │
-│  │   (SSR)     │  │   (CSR)     │  │    (CSR)   │  (SSR)   │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ HTTP/REST API
-┌──────────────────────────▼──────────────────────────────────┐
-│                 Backend API (FastAPI + Python)                │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │  /api/hot   │  │  /api/chat  │  │  /api/cards         │  │
-│  │  /api/auth  │  │             │  │  /api/works         │  │
-│  └─────────────┘  └─────────────┘  │  /api/stats         │  │
-│                                    └─────────────────────┘  │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │              定时任务 (APScheduler)                      │  │
-│  │         每小时执行热点爬虫任务                           │  │
-│  └────────────────────────────────────────────────────────┘  │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-        ┌──────────────────┼──────────────────┐
-        ▼                  ▼                  ▼
-┌──────────────┐  ┌────────────────┐  ┌────────────────┐
-│  PostgreSQL  │  │   MiniMax API  │  │  知乎OAuth     │
-│  (数据存储)   │  │                │  │  + 作品抓取    │
-└──────────────┘  └────────────────┘  └────────────────┘
-```
-
-
----
-
-## 4. 开发排期
-
-### Day 1 (5月11日) - 基础设施 + 热点广场
-- [ ] 项目初始化 (Docker + FastAPI + Next.js)
-- [ ] PostgreSQL + SQLAlchemy模型设计
-- [ ] Alembic迁移配置
-- [ ] Playwright爬虫开发
-- [ ] 热点API (/api/hot)
-- [ ] 热点广场前端页面
-- [ ] Docker Compose本地运行
-
-**Day1产出**: 可本地运行的热点列表页面
-
-### Day 2 (5月12日) - 用户系统 + 创作对话
-- [ ] 知乎OAuth集成
-- [ ] JWT认证中间件
-- [ ] MiniMax API集成
-- [ ] 对话API (/api/chat)
-- [ ] 对话页面前端
-- [ ] 对话历史列表
-
-**Day2产出**: 可登录并与AI对话
-
-### Day 3 (5月13日) - 灵感卡片 + 数据面板
-- [ ] 灵感卡片API (/api/cards)
-- [ ] 卡片页面前端
-- [ ] 作品数据API (/api/works, /api/stats)
-- [ ] 数据面板图表
-- [ ] UI优化 + Bug修复
-- [ ] 部署脚本
-
-**Day3产出**: 完整功能Demo
-
-### Day 4 (5月14日) - 提交前
-- [ ] 最终测试
-- [ ] 部署到服务器
-- [ ] 文档完善
-- [ ] 正式提交
-
----
-
-## 5. 环境变量配置
-
-```bash
-# .env 文件示例
-
-# Database
-DB_USER=creator
-DB_PASSWORD=your_secure_password
-DB_NAME=creator_assistant
-DATABASE_URL=postgresql://creator:password@postgres:5432/creator_assistant
-
-# MiniMax
-MINIMAX_API_KEY=your_minimax_api_key
-MINIMAX_GROUP_ID=your_group_id
-
-# Zhihu OAuth
-ZHIHU_CLIENT_ID=your_zhihu_client_id
-ZHIHU_CLIENT_SECRET=your_zhihu_client_secret
-ZHIHU_REDIRECT_URI=http://localhost:8000/api/auth/callback
-
-# JWT
-JWT_SECRET=your_jwt_secret_key
-JWT_ALGORITHM=HS256
-JWT_EXPIRE_DAYS=7
-
-# CORS
-CORS_ORIGINS=http://localhost:3000,https://yourdomain.com
-
-# Frontend
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
 
 **文档结束**

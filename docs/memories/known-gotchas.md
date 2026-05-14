@@ -37,3 +37,8 @@
 - `images/` 目录用于存放构建产物（tar.gz），已在 `.gitignore` 中排除，不入仓库。
 - 部署流程分两步：先在 BUILD_HOST 执行 `ops/build.sh` 构建镜像，再执行 `ops/deploy.sh` 传输到 TARGET_HOST。
 - 生产部署文档与示例配置禁止写入可直接定位环境的真实主机名、域名和绝对路径；仓库内只保留占位符（如 `TARGET_HOST`/`APP_DOMAIN`/`DEPLOY_DIR`），真实值放在不入库的私有运维资料中。
+- 若本地 shell 设置了 `http_proxy/https_proxy`（含大写变量），`ssh seed` 可能异常或超时；发布前应先 `unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY` 再连接服务器。
+- 生产问题排查必须先在宿主机 `cd /root/zhihu_alpha` 后执行 `docker compose --env-file .env.prod -f docker-compose.prod.yml ps/logs`，避免在错误目录读取到不相关容器或空日志而误判根因。
+- 热点广场 React Query 切换 queryKey 时（如平台筛选变更），若无 `placeholderData: keepPreviousData`，新 key 无缓存会触发 `isLoading=true` → 骨架屏闪现 → 内容回填，导致布局抖动；解法是为频繁切换 key 的查询统一加 `keepPreviousData`。
+- 热点广场平台筛选使用 `Set<string>` 管理已选平台；若实现为多选 toggle（add/delete），用户连续点击不同平台会叠加而非替换，与"点哪个看哪个"的单选预期不符；应改为单选逻辑（`new Set([id])`）。
+- 后端 `/api/hot` 按 `HotTopic.platform ASC` 排序是字母序（baidu < zhihu），导致百度热搜排在知乎前面；需使用 `PLATFORM_REGISTRY` 定义的自然顺序配合 SQLAlchemy `case()` 表达式实现自定义排序。

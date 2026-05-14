@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import {
   Flame,
@@ -677,6 +677,7 @@ export function HotPage() {
     queryKey: ['hot-topics', platformFilter],
     queryFn: () => api.hot.list({ limit: 100, platform: platformFilter }),
     staleTime: 60_000,
+    placeholderData: keepPreviousData,
     enabled: viewMode === 'all' || viewMode === 'platform',
   })
 
@@ -684,6 +685,7 @@ export function HotPage() {
     queryKey: ['hot-grouped', platformFilter],
     queryFn: () => api.hot.grouped(platformFilter),
     staleTime: 60_000,
+    placeholderData: keepPreviousData,
     enabled: viewMode === 'topic',
   })
 
@@ -691,6 +693,7 @@ export function HotPage() {
     queryKey: ['hot-history', platformFilter],
     queryFn: () => api.hot.history(5, platformFilter),
     staleTime: 120_000,
+    placeholderData: keepPreviousData,
     enabled: viewMode === 'history',
   })
 
@@ -730,10 +733,8 @@ export function HotPage() {
       return
     }
     setSelectedPlatforms((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
+      if (prev.has(id) && prev.size === 1) return new Set()
+      return new Set([id])
     })
   }
 

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **热点广场页面抖动**：为 `latestQuery` / `groupedQuery` / `historyQuery` 添加 `placeholderData: keepPreviousData`，切换平台标签时保持旧数据可见，消除骨架屏闪烁引起的布局抖动。
+- **平台筛选未按选中分类更新**：`handleTogglePlatform` 从多选 toggle 改为单选逻辑——点击平台替换当前选择，再次点击同一平台取消回到"全部"。
+- **"全部"视图下百度热搜排在知乎前面**：后端 `/api/hot` 排序从字母序改为按 `PLATFORM_REGISTRY` 定义顺序（知乎优先），使用 SQLAlchemy `case()` 表达式实现自定义平台优先级。
+
+### Added
+
+- 新增生产调试技能 `.cursor/skills/debugging-production-zhihu-alpha/SKILL.md`：可通过 `ssh seed` 直连生产机，按“状态快照 → 健康检查 → 多容器日志采集 → 根因分类 → 修复后验证”的闭环流程定位线上问题根因。
+
 ## [20260514_022341] - 2026-05-14
 
 ### Fixed
