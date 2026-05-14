@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **热点广场"历史"分类加载缓慢**：后端 `/api/hot/history` 从一次性加载 5 天全部数据（~57,600 条）优化为"先查批次元数据，每天仅取最新 3 个批次"（~3,600 条），数据量减少约 94%。
 - **历史 Tab 残留平台筛选参数**：前端历史查询不再携带其他 Tab 的 `platformFilter`，避免不必要的缓存 miss 和数据过滤。
 - **历史 DayCard 全部展开导致渲染慢**：非今天的 DayCard 默认折叠，仅展开最新一天，减少初始 DOM 节点数。
+- **前端缺失 remark-gfm 依赖**：`chat-session.tsx` 使用了 `remark-gfm` 但未在 `package.json` 声明，导致生产构建失败。
+
+### Deployed
+
+- 版本 `20260514_140044` 部署至生产环境，镜像归档于 `/root/images/zhihu_alpha_20260514_140044.tar.gz`（157M）
+- 健康检查通过：`GET /api/health → {"status":"ok"}`
 
 ## [20260514_105827] - 2026-05-14
 
