@@ -103,14 +103,14 @@ export const api = {
       if (params?.offset) qs.set('offset', String(params.offset))
       return request<import('@/types/api').CardListResponse>(`/api/cards?${qs}`)
     },
-    create: (data: { content: string; tags?: string[]; hot_topic_id?: string; chat_session_id?: string }) =>
+    create: (data: { title?: string; content: string; tags?: string[]; hot_topic_id?: string; chat_session_id?: string }) =>
       request<import('@/types/api').IdeaCard>('/api/cards', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
     get: (id: string) =>
       request<import('@/types/api').IdeaCard>(`/api/cards/${id}`),
-    update: (id: string, data: { content?: string; tags?: string[] }) =>
+    update: (id: string, data: { title?: string; content?: string; tags?: string[] }) =>
       request<import('@/types/api').IdeaCard>(`/api/cards/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),

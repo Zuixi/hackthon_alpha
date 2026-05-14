@@ -18,6 +18,7 @@ router = APIRouter(prefix="/api/cards", tags=["cards"])
 def _card_to_response(card: IdeaCard) -> CardResponse:
     return CardResponse(
         id=card.id,
+        title=card.title,
         content=card.content,
         tags=card.tags or [],
         hot_topic_id=card.hot_topic_id,
@@ -42,7 +43,10 @@ async def list_cards(
     if tag:
         q = q.filter(IdeaCard.tags.any(tag))
     if search:
-        q = q.filter(or_(IdeaCard.content.ilike(f"%{search}%")))
+        q = q.filter(or_(
+            IdeaCard.content.ilike(f"%{search}%"),
+            IdeaCard.title.ilike(f"%{search}%"),
+        ))
 
     total = q.count()
     cards = q.order_by(IdeaCard.created_at.desc()).offset(offset).limit(limit).all()
@@ -61,6 +65,7 @@ async def create_card(
 ):
     card = IdeaCard(
         user_id=user.id,
+        title=req.title,
         content=req.content,
         tags=req.tags,
         hot_topic_id=req.hot_topic_id,
@@ -117,6 +122,8 @@ async def update_card(
     if not card:
         raise HTTPException(status_code=404, detail="Card not found")
 
+    if req.title is not None:
+        card.title = req.title
     if req.content is not None:
         card.content = req.content
     if req.tags is not None:

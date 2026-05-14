@@ -4,6 +4,7 @@ from datetime import datetime
 
 
 class CreateCardRequest(BaseModel):
+    title: Optional[str] = None
     content: str
     tags: list[str] = []
     hot_topic_id: Optional[str] = None
@@ -11,12 +12,14 @@ class CreateCardRequest(BaseModel):
 
 
 class UpdateCardRequest(BaseModel):
+    title: Optional[str] = None
     content: Optional[str] = None
     tags: Optional[list[str]] = None
 
 
 class CardResponse(BaseModel):
     id: str
+    title: Optional[str] = None
     content: str
     tags: list[str]
     hot_topic_id: Optional[str] = None

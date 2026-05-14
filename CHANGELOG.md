@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **灵感卡片 UX 全面重设计**：从"备忘录"升级为"沉浸式灵感工作台"
+  - 空状态：情感化文案 + 三场景引导卡片（热点灵感/对话摘录/随想笔记）+ CTA
+  - 创建面板：Dialog 替换为右侧侧滑 Sheet（640px），含 Markdown 工具栏、预览切换、AI 标签推荐（前端 Mock）、彩色标签输入、关联热点/对话区
+  - 卡片网格：顶部色条 + 标题 + 摘要 + 彩色标签 + 关联信息 + 相对时间 + hover 动画
+  - 卡片详情弹窗：Markdown 渲染 + 标签 + 关联热点 + 发布/删除 + "基于灵感创作"跳转
+  - 网格/列表视图切换（localStorage 持久化）
+  - 标签颜色系统：8 色池按标签哈希分配固定颜色
+- **后端 IdeaCard 新增 `title` 字段**（nullable）：支持卡片标题，搜索同时匹配 title 和 content
 - 新增生产调试技能 `.cursor/skills/debugging-production-zhihu-alpha/SKILL.md`：可通过 `ssh seed` 直连生产机，按"状态快照 → 健康检查 → 多容器日志采集 → 根因分类 → 修复后验证"的闭环流程定位线上问题根因。
 
 ### Fixed

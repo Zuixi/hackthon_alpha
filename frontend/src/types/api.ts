@@ -98,6 +98,7 @@ export interface ChatSessionDetail {
 
 export interface IdeaCard {
   id: string
+  title: string | null
   content: string
   tags: string[]
   hot_topic_id: string | null

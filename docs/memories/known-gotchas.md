@@ -44,3 +44,6 @@
 - 后端 `/api/hot` 按 `HotTopic.platform ASC` 排序是字母序（baidu < zhihu），导致百度热搜排在知乎前面；需使用 `PLATFORM_REGISTRY` 定义的自然顺序配合 SQLAlchemy `case()` 表达式实现自定义排序。
 - `/api/hot/history` 禁止 `query.all()` 一次性加载全时间窗口数据；8平台×30条/批×48批/天×5天≈57,600条 ORM 对象会导致严重性能问题；正确做法是先查 `fetch_batch` 元数据按天分组，每天只取最新 `MAX_BATCHES_PER_DAY`（默认3）个批次的数据。
 - 前端历史 Tab 的 `historyQuery` 不应携带其他 Tab 的 `platformFilter`，否则会因 queryKey 变化导致不必要的重新请求和缓存 miss。
+- `IdeaCard.title` 为 nullable 字段，前端展示时需回退到内容首行摘要（去掉 Markdown 标记）；`chat-session.tsx` 的 `handleSaveCard` 不传 title，后端默认 null。
+- 灵感卡片创建面板使用 Sheet 组件（侧滑），需要在 `SheetContent` 上设置 `sm:max-w-[640px]` 覆盖默认的 `sm:max-w-sm` 限制。
+- 灵感卡片标签颜色通过哈希函数从 8 色池固定分配，确保同一标签在不同位置颜色一致。
