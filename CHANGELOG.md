@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 新增生产调试技能 `.cursor/skills/debugging-production-zhihu-alpha/SKILL.md`：可通过 `ssh seed` 直连生产机，按"状态快照 → 健康检查 → 多容器日志采集 → 根因分类 → 修复后验证"的闭环流程定位线上问题根因。
 
+### Fixed
+
+- **热点广场"历史"分类加载缓慢**：后端 `/api/hot/history` 从一次性加载 5 天全部数据（~57,600 条）优化为"先查批次元数据，每天仅取最新 3 个批次"（~3,600 条），数据量减少约 94%。
+- **历史 Tab 残留平台筛选参数**：前端历史查询不再携带其他 Tab 的 `platformFilter`，避免不必要的缓存 miss 和数据过滤。
+- **历史 DayCard 全部展开导致渲染慢**：非今天的 DayCard 默认折叠，仅展开最新一天，减少初始 DOM 节点数。
+
 ## [20260514_105827] - 2026-05-14
 
 ### Fixed

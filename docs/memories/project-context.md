@@ -30,6 +30,9 @@ SUMMARIZE global project status/system environment/user preferences/etc BY USING
 - 生产环境使用宿主机 Nginx + Let's Encrypt 做 SSL 终止，Docker 内部走 HTTP；Redis 启用密码认证 + AOF 持久化；数据库每日自动备份。
 - 开发用 Dockerfile（arm64 SWR 镜像源）与生产用 Dockerfile.prod（通用多平台镜像）分离，互不干扰。
 - 仓库安全基线已加入“部署信息降敏 + CODEOWNERS 强审核 + gitleaks（本地 pre-commit 与 CI）”三重防护，生产真实域名/主机/路径仅允许保存在不入库的私有运维资料。
+- 生产自主部署技能 `deploying-zhihu-alpha` 要求在 `ssh seed` 前先清理本地代理变量（`http_proxy/https_proxy` 及大写形式），避免代理干扰 SSH 和发布命令。
+- 服务器端可直接使用仓库根目录 `deploy.sh` 一键发布：脚本固定从 `/root/code/hackthon_alpha` 构建镜像并在 `/root/zhihu_alpha` 启动容器，含健康检查重试。
+- 生产故障排查建议统一走 `debugging-production-zhihu-alpha` 技能：先在 `/root/zhihu_alpha` 采集 compose 状态与多容器日志证据，再进行根因分类与修复后回归，避免“先重启后取证”导致证据丢失。
 
 ## USER PROFILES
 

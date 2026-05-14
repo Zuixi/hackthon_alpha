@@ -512,14 +512,16 @@ function KeywordGroupCard({
 
 function DayCard({
   dayGroup,
+  defaultExpanded = false,
   onStartChat,
   onInspiration,
 }: {
   dayGroup: HotDayGroup
+  defaultExpanded?: boolean
   onStartChat: (t: HotTopic) => void
   onInspiration: (t: HotTopic) => void
 }) {
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(defaultExpanded)
   const latestBatch = dayGroup.batches[0]
   if (!latestBatch) return null
 
@@ -690,8 +692,8 @@ export function HotPage() {
   })
 
   const historyQuery = useQuery({
-    queryKey: ['hot-history', platformFilter],
-    queryFn: () => api.hot.history(5, platformFilter),
+    queryKey: ['hot-history'],
+    queryFn: () => api.hot.history(5),
     staleTime: 120_000,
     placeholderData: keepPreviousData,
     enabled: viewMode === 'history',
@@ -1000,10 +1002,11 @@ export function HotPage() {
                 <span className="tabular-nums">最近 {historyQuery.data.total_days} 天的热榜记录</span>
               </div>
               <div className="space-y-3">
-                {historyQuery.data.days.map((dayGroup) => (
+                {historyQuery.data.days.map((dayGroup, idx) => (
                   <DayCard
                     key={dayGroup.date}
                     dayGroup={dayGroup}
+                    defaultExpanded={idx === 0}
                     onStartChat={handleStartChat}
                     onInspiration={handleInspiration}
                   />

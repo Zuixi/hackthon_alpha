@@ -42,3 +42,5 @@
 - 热点广场 React Query 切换 queryKey 时（如平台筛选变更），若无 `placeholderData: keepPreviousData`，新 key 无缓存会触发 `isLoading=true` → 骨架屏闪现 → 内容回填，导致布局抖动；解法是为频繁切换 key 的查询统一加 `keepPreviousData`。
 - 热点广场平台筛选使用 `Set<string>` 管理已选平台；若实现为多选 toggle（add/delete），用户连续点击不同平台会叠加而非替换，与"点哪个看哪个"的单选预期不符；应改为单选逻辑（`new Set([id])`）。
 - 后端 `/api/hot` 按 `HotTopic.platform ASC` 排序是字母序（baidu < zhihu），导致百度热搜排在知乎前面；需使用 `PLATFORM_REGISTRY` 定义的自然顺序配合 SQLAlchemy `case()` 表达式实现自定义排序。
+- `/api/hot/history` 禁止 `query.all()` 一次性加载全时间窗口数据；8平台×30条/批×48批/天×5天≈57,600条 ORM 对象会导致严重性能问题；正确做法是先查 `fetch_batch` 元数据按天分组，每天只取最新 `MAX_BATCHES_PER_DAY`（默认3）个批次的数据。
+- 前端历史 Tab 的 `historyQuery` 不应携带其他 Tab 的 `platformFilter`，否则会因 queryKey 变化导致不必要的重新请求和缓存 miss。

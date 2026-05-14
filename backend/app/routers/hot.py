@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 CACHE_KEY = "hot:latest"
 CACHE_TTL_SECONDS = 300
 DATA_RETENTION_DAYS = 5
+MAX_BATCHES_PER_DAY = 3
 
 _PLATFORM_ORDER = {
     p["platform_key"]: idx for idx, p in enumerate(PLATFORM_REGISTRY)
@@ -266,7 +267,7 @@ async def get_hot_history(
     platform: str = Query(None, description="Comma-separated platform filter"),
     db: Session = Depends(get_db),
 ):
-    """Get hot topics history grouped by day, up to 5 days."""
+    """Get hot topics history grouped by day (latest N batches per day)."""
     platforms = _parse_platforms(platform)
     cache_key = f"hot:history:{days}:{platform or 'all'}"
 
@@ -275,14 +276,35 @@ async def get_hot_history(
         return HotHistoryResponse(**cached)
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-    query = (
-        db.query(HotTopic)
+
+    batch_rows = (
+        db.query(
+            HotTopic.fetch_batch,
+            sa_func.min(HotTopic.fetched_at).label("batch_time"),
+        )
         .filter(HotTopic.fetched_at >= cutoff, HotTopic.fetch_batch != "")
+        .group_by(HotTopic.fetch_batch)
+        .order_by(sa_func.min(HotTopic.fetched_at).desc())
+        .all()
     )
+
+    day_batches: dict[str, list[str]] = defaultdict(list)
+    for batch_id, batch_time in batch_rows:
+        date_str = batch_time.strftime("%Y-%m-%d")
+        if len(day_batches[date_str]) < MAX_BATCHES_PER_DAY:
+            day_batches[date_str].append(batch_id)
+
+    selected_batches = [b for batches in day_batches.values() for b in batches]
+    if not selected_batches:
+        result = HotHistoryResponse(days=[], total_days=0)
+        cache_set(cache_key, result.model_dump(), CACHE_TTL_SECONDS)
+        return result
+
+    query = db.query(HotTopic).filter(HotTopic.fetch_batch.in_(selected_batches))
     if platforms:
         query = query.filter(HotTopic.platform.in_(platforms))
 
-    topics = query.order_by(HotTopic.fetched_at.desc()).all()
+    topics = query.all()
 
     batch_map: dict[str, list[HotTopic]] = defaultdict(list)
     for t in topics:
